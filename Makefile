@@ -5,7 +5,7 @@ LDFLAGS = -lm
 LDLIBS = -lpcap -lpthread
 RM = rm -f
 
-SRC = src/main.c src/parser.c
+SRC = src/main.c src/parser.c src/show_help.c
 
 OBJTS = $(SRC:.c=.o)
 
