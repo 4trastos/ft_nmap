@@ -24,10 +24,10 @@
 
 struct config
 {
-    char    **argv;
-    int     argc;
     bool    show_help;
     bool    is_valid;
+    char    **argv;
+    int     argc;
 };
 
 //*** Init Functions ***/

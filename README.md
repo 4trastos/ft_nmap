@@ -101,3 +101,320 @@ Según el estándar, si el puerto está **cerrado**, el *host* debe responder co
 | **`-iL <archivo>`** | Entrada de Lista | Carga una lista de hosts o redes desde un archivo. |
 
 ***
+
+Perfecto.
+Aquí tienes **la estructura correcta, completa y profesional** para `ft_nmap`, **sin darte código**, sólo arquitectura y responsabilidades.
+Esta estructura cumple al 100% con el subject y evita errores comunes del proyecto.
+
+---
+
+# ✅ **ESTRUCTURA FINAL Y CORRECTA DEL PROYECTO `ft_nmap`**
+
+Diseñada exactamente para:
+
+* Parsing serio de argumentos
+* Lectura de lista de IPs
+* Soporte de rangos y listas de puertos
+* Soporte múltiple de scans (SYN / NULL / FIN / XMAS / ACK / UDP)
+* Uso de **threads** (0–250)
+* Uso de **pcap** para capturar respuestas
+* Formateo final EXACTO como el subject
+
+---
+
+# 📁 **ÁRBOL DEL PROYECTO**
+
+```
+ft_nmap/
+│
+├── Makefile
+├── README.md
+│
+├── incl/
+│   ├── ft_nmap.h
+│   ├── args.h
+│   ├── ports.h
+│   ├── iplist.h
+│   ├── scan_types.h
+│   ├── scheduler.h
+│   ├── pcap_capture.h
+│   ├── packet_builder.h
+│   ├── scan_exec.h
+│   ├── results.h
+│   ├── formatter.h
+│   └── utils.h
+│
+└── src/
+    ├── main.c
+    │
+    ├── args/
+    │   ├── parse_args.c
+    │   ├── parse_ports.c
+    │   ├── parse_ip.c
+    │   ├── parse_scan_types.c
+    │   ├── parse_speedup.c
+    │   └── validate_args.c
+    │
+    ├── data/
+    │   ├── iplist.c
+    │   ├── ports.c
+    │   └── results.c
+    │
+    ├── scans/
+    │   ├── scan_syn.c
+    │   ├── scan_ack.c
+    │   ├── scan_null.c
+    │   ├── scan_fin.c
+    │   ├── scan_xmas.c
+    │   └── scan_udp.c
+    │
+    ├── network/
+    │   ├── packet_builder.c
+    │   ├── pcap_capture.c
+    │   ├── send_raw_packet.c
+    │   └── socket_setup.c
+    │
+    ├── threads/
+    │   ├── scheduler.c
+    │   └── worker_thread.c
+    │
+    ├── output/
+    │   ├── formatter.c
+    │   └── print_results.c
+    │
+    ├── utils/
+    │   ├── time.c
+    │   ├── service_lookup.c
+    │   └── string_utils.c
+    │
+    └── help/
+        └── print_help.c
+```
+
+---
+
+# 🧩 **RESPONSABILIDADES DE CADA MÓDULO**
+
+---
+
+## 🔹 **1. main.c**
+
+* Inicializa la estructura global del programa
+* Llama al parser
+* Prepara hilos
+* Lanza escaneos
+* Llama al formatter para imprimir resultados
+
+---
+
+## 🔹 **2. /incl — Headers**
+
+Un header por módulo, sin includes cruzados innecesarios.
+
+`ft_nmap.h` sólo contiene:
+
+* includes estándar
+* defines globales del proyecto
+* structs centrales
+* prototipos generales
+
+---
+
+## 🔹 **3. args/**
+
+Toda la lógica de parsing:
+
+### `parse_args.c`
+
+* Recibe `argc/argv`
+* Reconstruye tokens
+* Detecta flags
+* Llama a los sub-parsers
+
+### `parse_ports.c`
+
+* Procesa:
+
+  * `1-100`
+  * `80,443,8080`
+  * mezcla `1-20,80,443`
+* Garantiza:
+
+  * máximo 1024 puertos
+  * ordenación interna (opcional)
+
+### `parse_ip.c`
+
+* Gestiona `--ip`
+* Resuelve hostnames **sin FQDN** (subject)
+* Valida IPv4
+
+### `parse_scan_types.c`
+
+* Procesa `--scan SYN,XMAS,NULL`
+* Si no se especifica: activa TODOS
+
+### `parse_speedup.c`
+
+* Valida 0–250 threads
+
+### `validate_args.c`
+
+* Comprueba combinaciones inválidas:
+
+  * `--ip` y `--file` simultáneos → error
+  * falta IP → error
+  * speedup > 250 → error
+  * puerto inválido → error
+
+---
+
+## 🔹 **4. data/**
+
+### `iplist.c`
+
+* Lee archivo de IPs
+* Guarda lista dinámica de targets
+
+### `ports.c`
+
+* Gestiona array/lista de puertos
+* Número total de puertos a escanear
+
+### `results.c`
+
+* Estructura con los resultados finales de cada scan por puerto:
+
+  * open
+  * closed
+  * filtered
+  * unfiltered
+  * open|filtered
+
+---
+
+## 🔹 **5. scans/**
+
+Un archivo por tipo de scan:
+
+* `scan_syn.c`
+* `scan_ack.c`
+* `scan_null.c`
+* `scan_fin.c`
+* `scan_xmas.c`
+* `scan_udp.c`
+
+Cada uno:
+
+* construye un paquete específico
+* envía con `send_raw_packet`
+* espera respuesta en pcap
+* clasifica resultado según RFC
+
+**NO mezclas lógica entre scans.**
+
+---
+
+## 🔹 **6. network/**
+
+### `packet_builder.c`
+
+* Construye cabeceras:
+
+  * Ethernet (opcional)
+  * IP
+  * TCP
+  * UDP
+
+### `pcap_capture.c`
+
+* Configura pcap
+* Filtra por:
+
+  * IP destino
+  * puerto
+  * flags TCP
+* Timeout por puerto
+* Devuelve la respuesta capturada
+
+### `send_raw_packet.c`
+
+* Envía el paquete RAW con `sendto`
+
+### `socket_setup.c`
+
+* Crea sockets RAW TCP/UDP
+* Ajusta opciones (IP_HDRINCL)
+
+---
+
+## 🔹 **7. threads/**
+
+### `scheduler.c`
+
+* Divide puertos entre hilos
+* Coordina estados
+* Asegura:
+
+  * no más de 250 hilos
+  * reparto eficiente
+
+### `worker_thread.c`
+
+* Cada thread ejecuta:
+
+  * por cada puerto:
+
+    * por cada tipo de scan activado:
+
+      * enviar paquete
+      * esperar respuesta con pcap
+      * guardar resultado
+
+---
+
+## 🔹 **8. output/**
+
+### `formatter.c`
+
+* Construye el formato EXACTO del subject:
+
+  * lista de puertos abiertos
+  * lista de puertos cerrados/filtered/unfiltered
+  * por cada puerto muestra resultados por scan
+
+### `print_results.c`
+
+* Imprime tabla final
+* Alinea columnas
+* Ordena puertos
+
+---
+
+## 🔹 **9. utils/**
+
+### `time.c`
+
+* Medición de tiempo total del scan
+
+### `service_lookup.c`
+
+* Mapea:
+
+  * 80 → http
+  * 53 → domain
+  * 443 → https
+
+### `string_utils.c`
+
+* splits, trims, parsers simples
+
+---
+
+## 🔹 **10. help/**
+
+### `print_help.c`
+
+* Muestra EXACTO el formato del subject
+
+---
