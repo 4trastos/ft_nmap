@@ -1,23 +1,38 @@
 #include "ft_nmap.h"
 
+volatile sig_atomic_t   g_stop = 0;
+
+void    cleanup(t_config *conf)
+{
+    free(conf);
+}
+
 int main(int argc, char **argv)
 {
-    struct config   *conf;
+    t_config   *conf;
     int             exit = 0;
 
     if (argc == 1)
     {
-        printf("%s Usage: %s --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n", argv[0]);
+        printf("%s Usage: --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n", argv[0]);
         printf("Try --help for more information.\n");
         return (1);
     }
 
-    conf = malloc(sizeof(struct config));
+    conf = malloc(sizeof(t_config));
     if (!conf)
         return (1);
-    
-    init_struct(conf);
-    if (ft_parser(conf, argv) != 0)
+    init_signal();
+    init_struct(conf, argc);
+    if (ft_parser_args(conf, argv) != 0)
         exit = 1;
+    while (!g_stop)
+    {
+        printf("FUNCIONO\n");
+        if (g_stop == 1)
+            printf("SEÑAL RECIBIDA\n");
+    }
+    
+    cleanup(conf);
     return (exit);
 }
