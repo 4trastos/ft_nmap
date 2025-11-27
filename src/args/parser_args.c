@@ -8,7 +8,7 @@ void    init_struct(struct config *conf)
     conf->show_help = false;
 }
 
-int ft_parser(struct config *conf, char **argv)
+int ft_parser_args(struct config *conf, char **argv)
 {
 
     return (0);

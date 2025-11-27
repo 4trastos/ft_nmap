@@ -37,7 +37,7 @@ int     main(int argc, char **argv);
 //*** Parser ***/
 
 void    init_struct(struct config *conf);
-int     ft_parser(struct config *conf, char **argv);
+int     ft_parser_args(struct config *conf, char **argv);
 
 //*** Show Printouts***/
 
