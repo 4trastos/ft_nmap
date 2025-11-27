@@ -7,7 +7,8 @@ int main(int argc, char **argv)
 
     if (argc == 1)
     {
-        printf("%s [--help] [--ports [NUMBER/RANGED]] --ip IP_ADDRESS [--speedup [NUMBER]] [--scan [TYPE]]\n", argv[0]);
+        printf("%s Usage: %s --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n", argv[0]);
+        printf("Try --help for more information.\n");
         return (1);
     }
 
