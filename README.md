@@ -418,3 +418,138 @@ Cada uno:
 * Muestra EXACTO el formato del subject
 
 ---
+
+Perfecto. Aquí tienes **solo explicación**, sin código, cubriendo las **4 cosas** que pides entender de cómo funciona `nmap` y cómo debe funcionar tu `ft_nmap`.
+
+---
+
+# ✅ 1. Cómo funciona un comando `nmap` básico
+
+`nmap` puede ejecutarse simplemente pasando un **objetivo**, sin ningún flag adicional:
+
+* `nmap 8.8.8.8`
+* `nmap scanme.nmap.org`
+* `nmap localhost`
+
+Esto hace que `nmap` use su **configuración por defecto**:
+
+* Escaneo TCP SYN
+* Escaneo de los 1000 puertos más comunes
+* Detección básica del host
+
+**Conclusión:**
+Nmap permite lanzar un escaneo solo indicando el destino.
+
+---
+
+# ✅ 2. Cómo funcionan los flags u opciones de `nmap`
+
+Los flags modifican el comportamiento del escaneo. Ejemplos reales:
+
+* `-p 80` → puerto 80
+* `-p 20-80` → rango
+* `-sS` → SYN scan
+* `--top-ports 20` → los 20 más comunes
+* `-T4` → velocidad
+* `-A` → detección avanzada
+* `-v` → verbose
+
+**Conclusión:**
+El usuario debe poder poner:
+
+* solo flags
+* flags + objetivo
+* objetivo + flags
+  en cualquier orden.
+
+---
+
+# ✅ 3. Qué hace Nmap cuando se mezclan objetivos + opciones
+
+Ejemplos típicos:
+
+* `nmap -p 80 8.8.8.8`
+* `nmap 192.168.1.0/24 -sn`
+* `nmap -sS -T4 scanme.nmap.org`
+
+**Patrón general:**
+`nmap [opciones] <objetivo> [más opciones opcionales]`
+
+Nmap permite:
+
+* un objetivo al final
+* uno al principio
+* varios objetivos
+* redes enteras
+
+**Conclusión:**
+Tu `ft_nmap` puede simplificar esto, pero Nmap es flexible.
+
+---
+
+# ✅ 4. ¿Cómo debería funcionar tu `ft_nmap`? (versión simplificada del proyecto)
+
+Tu implementación está diseñada para aceptar flags **tipo GNU largo**, todos opcionales excepto `--ip`.
+
+Tu uso ideal sería:
+
+```
+ft_nmap --ip 8.8.8.8
+ft_nmap --ip scanme.nmap.org --ports 80
+ft_nmap --ip 10.0.0.1 --ports 1-100 --speedup 5 --scan SYN
+```
+
+Tus opciones significan:
+
+### ✔ `--ip <address>`
+
+Obligatoria.
+Es el destino del escaneo.
+Es el equivalente simplificado del “objetivo” de nmap.
+
+### ✔ `--ports <ports>`
+
+Opcional.
+
+* Puede ser un puerto
+* un rango
+* una lista
+* o “all”
+
+### ✔ `--speedup <number>`
+
+Opcional.
+Número de hilos (o workers).
+Equivalente simplificado a `-T` de Nmap.
+
+### ✔ `--scan <type>`
+
+Opcional.
+Por ejemplo: SYN, NULL, FIN, XMAS.
+
+**Tu programa funciona así a propósito:**
+
+* Sin argumentos → mensaje de ayuda.
+* Con `--help` → manual.
+* Con `--ip` como mínimo → empieza el escaneo.
+
+---
+
+# 📌 Síntesis final
+
+Para tu proyecto debes comprender esto:
+
+### 🔹 **Nmap real**
+
+* Permite usar solo el objetivo.
+* Permite escaneos complejos.
+* Admite flags en cualquier orden.
+
+### 🔹 **Tu ft_nmap**
+
+* Necesita **--ip** obligatoriamente.
+* Tiene flags largos estilo GNU.
+* El diseño está simplificado para el proyecto de 42.
+* No hace falta replicar la sintaxis exacta de Nmap real.
+
+---
