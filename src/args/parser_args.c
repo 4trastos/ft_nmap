@@ -29,7 +29,7 @@ int ft_parser_args(t_config *conf, char **argv)
 
     if (argv[i][0] != '-')
     {
-        printf("❌ Error: %s Usage: --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>] ❌\n", argv[0]);
+        printf("❌ Error: %s Usage: --ip <IPv4 | hostname> [--ports <ports>] [--speedup <number>] [--scan <type>] ❌\n", argv[0]);
         return (-1);
     }
 
@@ -47,10 +47,18 @@ int ft_parser_args(t_config *conf, char **argv)
                 if (parser_result == 1)
                     i++;
             }
+            else if (strcmp(argv[i], "--ports") == 0)
+            {
+                parser_result = parse_ports(conf, argv, i);
+                if (parser_result == -1)
+                    return (-1);
+                if (parser_result == 1)
+                    i++;
+            }
             else
             {
                 printf("❌ Bad option `%s' (argc %d) \n", argv[i], i);
-                printf("Usage: --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n");
+                printf("Usage: --ip <IPv4 | hostname> [--ports <ports>] [--speedup <number>] [--scan <type>]\n");
                 return (-1);
             }
         }

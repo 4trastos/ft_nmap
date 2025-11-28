@@ -2,8 +2,6 @@
 
 int parse_ip(t_config *conf, char **argv, int i)
 {
-    int     is_separate = 0;
-
     if (conf->hostname != NULL)
     {
         printf("%s: Error: Only one hostname is allowed\n", argv[0]);
@@ -13,11 +11,12 @@ int parse_ip(t_config *conf, char **argv, int i)
     {
         if (i + 1 >= conf->argc)
         {
-            printf("Option `--ip' (argc %d) requires an argument: `--ip <address>'\n", i);
+            printf("Option `--ip' (argc %d) requires an argument: `--ip <IPv4 | hostname>'\n", i);
             return (-1);
         }
         conf->hostname = argv[i + 1];
-        is_separate = 1;
+        if (conf->hostname[0] == '-')
+            return (-1);
     }
-    return (is_separate);
+    return (1);
 }

@@ -1,7 +1,7 @@
 NAME = ft_nmap
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g -Iincl
-LDFLAGS = -lm
+LDFLAGS = -lm -lc
 LDLIBS = -lpcap -lpthread
 RM = rm -f
 

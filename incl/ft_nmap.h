@@ -6,6 +6,7 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <stdbool.h>
+# include <ctype.h>
 # include <errno.h>
 # include <signal.h>
 # include <pthread.h>
@@ -85,6 +86,7 @@ int     main(int argc, char **argv);
 void    init_struct(t_config *conf, int argc);
 int     ft_parser_args(t_config *conf, char **argv);
 int     parse_ip(t_config *conf, char **argv, int i);
+int     parse_ports(t_config *conf, char **argv, int i);
 
 //*** Show Printouts***/
 
@@ -94,5 +96,11 @@ void    show_help(void);
 
 void    init_signal(void);
 void    handler_singint(int signum);
+
+/*** Utils Functions ***/
+
+char    **split_ports(char *str, t_config *conf);
+int     count_ports(char *str);
+char    *ft_strndup(char *str, int num);
 
 #endif
