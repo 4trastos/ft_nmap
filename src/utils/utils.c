@@ -32,3 +32,16 @@ char    *ft_strndup(char *str, int num)
     new[i] = '\0';
     return (new);
 }
+
+void    double_free(char **str)
+{
+    int     i = 0;
+
+    while (str[i])
+    {
+        free(str[i]);
+        i++;
+    }
+    free(str);
+    return;
+}

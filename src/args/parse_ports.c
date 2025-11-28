@@ -62,6 +62,9 @@ int parse_ports(t_config *conf, char **argv, int i)
     ports = split_ports(arg_value, conf);
     if (!ports)
         return (-1);
+    if (port_validator(conf, ports) != 0)
+        return (-1);
+    double_free(ports);
     return (1);
 }
 

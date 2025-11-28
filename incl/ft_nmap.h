@@ -87,6 +87,7 @@ void    init_struct(t_config *conf, int argc);
 int     ft_parser_args(t_config *conf, char **argv);
 int     parse_ip(t_config *conf, char **argv, int i);
 int     parse_ports(t_config *conf, char **argv, int i);
+int     port_validator(t_config *conf, char **ports);
 
 //*** Show Printouts***/
 
@@ -102,5 +103,6 @@ void    handler_singint(int signum);
 char    **split_ports(char *str, t_config *conf);
 int     count_ports(char *str);
 char    *ft_strndup(char *str, int num);
+void    double_free(char **ports);
 
 #endif
