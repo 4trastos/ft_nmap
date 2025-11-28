@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 
     if (argc == 1)
     {
-        printf("%s Usage: --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n", argv[0]);
+        printf("%s Usage: --ip <address> [--ports <range/list>] [--scan <types>] [--speedup <n>]\n", argv[0]);
         printf("Try --help for more information.\n");
         return (1);
     }
@@ -26,7 +26,12 @@ int main(int argc, char **argv)
     init_struct(conf, argc);
     if (ft_parser_args(conf, argv) != 0)
         exit = 1;
-    while (!g_stop)
+    if (conf->show_help)
+    {
+        show_help();
+        return (exit);
+    }
+    while (!g_stop && exit == 0)
     {
         printf("FUNCIONO\n");
         if (g_stop == 1)
