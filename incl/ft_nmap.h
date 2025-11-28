@@ -84,6 +84,7 @@ int     main(int argc, char **argv);
 
 void    init_struct(t_config *conf, int argc);
 int     ft_parser_args(t_config *conf, char **argv);
+int     parse_ip(t_config *conf, char **argv, int i);
 
 //*** Show Printouts***/
 

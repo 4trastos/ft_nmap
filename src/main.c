@@ -33,7 +33,9 @@ int main(int argc, char **argv)
     }
     while (!g_stop && exit == 0)
     {
-        printf("FUNCIONO\n");
+        printf("ip: ( %s )\n", conf->hostname);
+        printf("PARA EL BUCLE `CON Control + C'\n");
+        sleep (2);
         if (g_stop == 1)
             printf("SEÑAL RECIBIDA\n");
     }

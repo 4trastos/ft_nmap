@@ -25,7 +25,7 @@ void    init_struct(t_config *conf, int argc)
 int ft_parser_args(t_config *conf, char **argv)
 {
     int i = 1;
-    //int parser_result;
+    int parser_result;
 
     if (argv[i][0] != '-')
     {
@@ -38,9 +38,20 @@ int ft_parser_args(t_config *conf, char **argv)
         if (argv[i][0] == '-')
         {
             if (strcmp(argv[i], "--help") == 0 && conf->show_help == false)
-            {
                 conf->show_help = true;
-                return (0);
+            else if (strcmp(argv[i], "--ip") == 0)
+            {
+                parser_result = parse_ip(conf, argv, i);
+                if (parser_result == -1)
+                    return (-1);
+                if (parser_result == 1)
+                    i++;
+            }
+            else
+            {
+                printf("❌ Bad option `%s' (argc %d) \n", argv[i], i);
+                printf("Usage: --ip <address> [--ports <ports>] [--speedup <number>] [--scan <type>]\n");
+                return (-1);
             }
         }
         i++;
