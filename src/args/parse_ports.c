@@ -15,7 +15,7 @@ char    **split_ports(char *str, t_config *conf)
     ports = malloc(sizeof(char *) * (count_ports(str) + 1));
     if (!ports)
         return (NULL);
-    conf->ports_number = count_ports;
+    conf->ports_number = count_ports(str);
     while (x < count_ports(str) && str[i] != '\0')
     {
         memo = i;
@@ -31,7 +31,7 @@ char    **split_ports(char *str, t_config *conf)
 int parse_ports(t_config *conf, char **argv, int i)
 {
     char        **ports = NULL;
-    char  *arg_value = NULL;
+    char        *arg_value = NULL;
     int         x = 0;
 
     if (strcmp(argv[i], "--ports") == 0)

@@ -9,8 +9,8 @@ void    cleanup(t_config *conf)
 
 int main(int argc, char **argv)
 {
-    t_config   *conf;
-    int             exit = 0;
+    t_config    *conf;
+    int         exit = 0;
 
     if (argc == 1)
     {
