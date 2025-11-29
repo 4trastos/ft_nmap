@@ -64,11 +64,17 @@ int parse_ports(t_config *conf, char **argv, int i)
             else if (x != 0 && (arg_value[x] == '-' || arg_value[x] == ','))
             {
                 if (arg_value[x + 1] == '-' || arg_value[x + 1] == ',')
+                {
+                    printf("❌ Error: `--port' You have used an invalid format: ( \"%s\" )\n", arg_value);
                     return (-1);
+                }
                 x++;
             }
             else
+            {
+                printf("❌ Error: `--port' You have used an invalid format: ( \"%s\" )\n", arg_value);
                 return (-1);
+            }
         }
         x--;
         if (arg_value[x] == '-' || arg_value[x] == ',')
@@ -82,21 +88,3 @@ int parse_ports(t_config *conf, char **argv, int i)
     double_free(tokens);
     return (1);
 }
-
-/* COSAS POR HACER */
-
-// que los números estén en rango (0–65535)
-
-// que 1-100 tenga sentido (inicio < fin)
-
-// que ,-- no aparezcan dos veces seguidas
-
-// que no empiece o termine con coma o guion
-
-// que no haya "80-", "80,,22", "--", etc.
-
-// que la lista esté bien formateada
-
-// que no mezcle cosas imposibles (100-1)
-
-// que no haya espacios ("80 , 22")
