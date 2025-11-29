@@ -46,6 +46,8 @@ typedef enum e_port_state
 typedef struct s_port
 {
     int                     number;
+    int                     start_port;
+    int                     end_port;
     t_port_state            state;
 }   t_port;
 
@@ -65,7 +67,7 @@ typedef struct s_config
     /* Ports */
     int                     start_port;
     int                     end_port;
-    int                     ports_number;
+    int                     ports_tokens;
     t_port                  *ports;
 
     /* Threading */
@@ -87,7 +89,8 @@ void    init_struct(t_config *conf, int argc);
 int     ft_parser_args(t_config *conf, char **argv);
 int     parse_ip(t_config *conf, char **argv, int i);
 int     parse_ports(t_config *conf, char **argv, int i);
-int     port_validator(t_config *conf, char **ports);
+int     port_validator(t_config *conf, char **token);
+int     validate_range(t_config *conf, char *token);
 
 //*** Show Printouts***/
 
@@ -100,9 +103,12 @@ void    handler_singint(int signum);
 
 /*** Utils Functions ***/
 
-char    **split_ports(char *str, t_config *conf);
-int     count_ports(char *str);
+char    **split_tokens(char *str, t_config *conf);
+int     count_tokens(char *str);
 char    *ft_strndup(char *str, int num);
 void    double_free(char **ports);
+int     find_scripts(char *str);
+char	*ft_substr(char *str, int start, int len);
+int     ft_strlen(char *str);
 
 #endif

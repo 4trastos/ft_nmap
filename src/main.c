@@ -4,6 +4,8 @@ volatile sig_atomic_t   g_stop = 0;
 
 void    cleanup(t_config *conf)
 {
+    if (conf->ports != NULL)
+        free(conf->ports);
     free(conf);
 }
 

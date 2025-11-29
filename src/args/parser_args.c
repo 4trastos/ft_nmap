@@ -14,7 +14,7 @@ void    init_struct(t_config *conf, int argc)
     conf->scan_type = 0;
     conf->start_port = 0;
     conf->end_port = 0;
-    conf->ports_number = 0;
+    conf->ports_tokens = 0;
     conf->ports = NULL;
     conf->speedup = 0;
     conf->threads = NULL;

@@ -5,21 +5,36 @@
 // 22,80,443
 // 1-10,20,80-90
 
-char    **split_ports(char *str, t_config *conf)
+int count_tokens(char *str)
+{
+    char b = ',';
+    int i = 0;
+    int result = 0;
+
+    while (str[i] != '\0')
+    {
+        if (str[i] == b)
+            result++;
+        i++;
+    }
+    return (result + 1);
+}
+
+char    **split_tokens(char *str, t_config *conf)
 {
     char    **ports;
     int     i = 0;
     int     x = 0;
     int     memo = 0;
 
-    ports = malloc(sizeof(char *) * (count_ports(str) + 1));
+    ports = malloc(sizeof(char *) * (count_tokens(str) + 1));
     if (!ports)
         return (NULL);
-    conf->ports_number = count_ports(str);
-    while (x < count_ports(str) && str[i] != '\0')
+    conf->ports_tokens = count_tokens(str);
+    while (x < conf->ports_tokens && str[i] != '\0')
     {
         memo = i;
-        while (str[i] != '-' && str[i] != ',' && str[i] != '\0')
+        while (str[i] != ',' && str[i] != '\0')
             i++;
         ports[x] = ft_strndup(&str[memo], i - memo);
         x++;
@@ -30,7 +45,7 @@ char    **split_ports(char *str, t_config *conf)
 
 int parse_ports(t_config *conf, char **argv, int i)
 {
-    char        **ports = NULL;
+    char        **tokens = NULL;
     char        *arg_value = NULL;
     int         x = 0;
 
@@ -59,12 +74,12 @@ int parse_ports(t_config *conf, char **argv, int i)
         if (arg_value[x] == '-' || arg_value[x] == ',')
             return (-1);
     }
-    ports = split_ports(arg_value, conf);
-    if (!ports)
+    tokens = split_tokens(arg_value, conf);
+    if (!tokens)
         return (-1);
-    if (port_validator(conf, ports) != 0)
+    if (port_validator(conf, tokens) != 0)
         return (-1);
-    double_free(ports);
+    double_free(tokens);
     return (1);
 }
 
