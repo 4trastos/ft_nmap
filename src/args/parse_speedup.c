@@ -33,11 +33,11 @@ int     parse_speedup(t_config *conf, char **argv, int i)
             }
         }
         conf->speedup = ft_atoi_dav(arg_value, &limit);
-        if (limit == 1 || conf->speedup == 0)
+        if (limit == 1 || conf->speedup == 0 || conf->speedup > 250)
         {
             if (limit == 1)
                 printf("❌ Error: `--speedup' exceeds INT_MAX: ( \"%s\" )\n", arg_value);
-            else if (conf->speedup == 0)
+            else if (conf->speedup == 0 || conf->speedup > 250)
                 printf("❌ Error: `--speedup' You have used an invalid format: ( \"%s\" )\n", arg_value);
             return (-1);
         }
@@ -45,10 +45,7 @@ int     parse_speedup(t_config *conf, char **argv, int i)
 
     conf->nprocs = sysconf(_SC_NPROCESSORS_ONLN);
     if (conf->speedup > conf->nprocs)
-    {
-        printf("❌ Error: Your CPU ( Processors: %ld ) doesn't have enough threads ( --speedup %d )\n", conf->nprocs, conf->speedup);
-        return (-1);
-    }
+        printf("⚠️ WARNING ⚠️: Your CPU ( Processors: %ld ) doesn't have enough threads ( --speedup %d )\n", conf->nprocs, conf->speedup);
 
     return (1);
 }
