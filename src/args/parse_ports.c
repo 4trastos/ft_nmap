@@ -51,7 +51,7 @@ int parse_ports(t_config *conf, char **argv, int i)
 
     if (strcmp(argv[i], "--ports") == 0)
     {
-        if (i + 1 >= conf->argc)
+        if ((i + 1 >= conf->argc) || (argv[i+ 1][0] == '-'))
         {
             printf("Option `--ports' (argc %d) requires an argument: `--ports <ports>'\n", i);
             return (-1);

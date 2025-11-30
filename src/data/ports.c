@@ -19,6 +19,8 @@ int    validate_range(t_config *conf, char *token)
     char    *start = NULL;
     char    *end = NULL;
     int     i = 0;
+    int     limitstart = 0;
+    int     limitend = 0;
 
     while (token[i] != '\0')
     {
@@ -30,10 +32,12 @@ int    validate_range(t_config *conf, char *token)
         }
         i++;
     }
-    conf->start_port = atoi(start);
-    conf->end_port = atoi(end);
+    conf->start_port = ft_atoi_dav(start, &limitstart);
+    conf->end_port = ft_atoi_dav(end, &limitend);
     free(start);
     free(end);
+    if (limitstart == 1 || limitend == 1)
+        return (-1);
     if (conf->start_port > conf->end_port)
         return (-1);
     if (conf->start_port >= 0 && conf->end_port <= 65535)
@@ -46,6 +50,7 @@ int     port_validator(t_config *conf, char **token)
     int     i = 0;
     int     script = 0;
     int     port = 0;
+    int     limit = 0;
     
     conf->ports = malloc(sizeof(t_port) * (conf->ports_tokens + 1));
     if (!conf->ports)
@@ -69,8 +74,8 @@ int     port_validator(t_config *conf, char **token)
         }
         else
         {
-            port = atoi(token[i]);
-            if (port >= 0 && port <= 65535)
+            port = ft_atoi_dav(token[i], &limit);
+            if (port >= 0 && port <= 65535 && limit == 0)
             {
                 conf->ports[i].start_port = port;
                 conf->ports[i].end_port = port;

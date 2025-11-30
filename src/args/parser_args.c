@@ -16,7 +16,7 @@ void    init_struct(t_config *conf, int argc)
     conf->end_port = 0;
     conf->ports_tokens = 0;
     conf->ports = NULL;
-    conf->speedup = 0;
+    conf->speedup = 1;
     conf->threads = NULL;
     conf->is_valid = false;
     conf->sockfd = -1;
@@ -50,6 +50,22 @@ int ft_parser_args(t_config *conf, char **argv)
             else if (strcmp(argv[i], "--ports") == 0)
             {
                 parser_result = parse_ports(conf, argv, i);
+                if (parser_result == -1)
+                    return (-1);
+                if (parser_result == 1)
+                    i++;
+            }
+            else if (strcmp(argv[i], "--scan") == 0)
+            {
+                parser_result = parse_scantypes(conf, argv, i);
+                if (parser_result == -1)
+                    return (-1);
+                if (parser_result == 1)
+                    i++;
+            }
+            else if (strcmp(argv[i], "--speedup") == 0)
+            {
+                parser_result = parse_speedup(conf, argv, i);
                 if (parser_result == -1)
                     return (-1);
                 if (parser_result == 1)

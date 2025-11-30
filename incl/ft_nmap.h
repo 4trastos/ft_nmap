@@ -10,6 +10,7 @@
 # include <errno.h>
 # include <signal.h>
 # include <pthread.h>
+# include <limits.h>
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <sys/time.h>
@@ -23,7 +24,7 @@
 
 extern volatile sig_atomic_t   g_stop;
 
-typedef enum e_sacan_flags
+typedef enum e_scan_flags
 {
     SCAN_SYN    = 1 << 0,
     SCAN_NULL   = 1 << 1,
@@ -71,6 +72,7 @@ typedef struct s_config
     t_port                  *ports;
 
     /* Threading */
+    long                    nprocs;
     int                     speedup;
     pthread_t               *threads;
 
@@ -91,6 +93,8 @@ int     parse_ip(t_config *conf, char **argv, int i);
 int     parse_ports(t_config *conf, char **argv, int i);
 int     port_validator(t_config *conf, char **token);
 int     validate_range(t_config *conf, char *token);
+int     parse_speedup(t_config *conf, char **argv, int i);
+int     parse_scantypes(t_config *conf, char **argv, int i);
 
 //*** Show Printouts***/
 
@@ -110,5 +114,6 @@ void    double_free(char **ports);
 int     find_scripts(char *str);
 char	*ft_substr(char *str, int start, int len);
 int     ft_strlen(char *str);
+int     ft_atoi_dav(char *str, int *limit);
 
 #endif

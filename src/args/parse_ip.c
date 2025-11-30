@@ -9,7 +9,7 @@ int parse_ip(t_config *conf, char **argv, int i)
     }
     if (strcmp(argv[i], "--ip") == 0)
     {
-        if (i + 1 >= conf->argc)
+        if ((i + 1 >= conf->argc) || (argv[i+ 1][0] == '-'))
         {
             printf("Option `--ip' (argc %d) requires an argument: `--ip <IPv4 | hostname>'\n", i);
             return (-1);
