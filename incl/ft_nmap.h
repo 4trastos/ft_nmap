@@ -84,6 +84,7 @@ typedef struct s_config
 //*** Init Functions ***/
 
 int     main(int argc, char **argv);
+int     dns_resolution(t_config *conf);
 
 //*** Parser ***/
 
