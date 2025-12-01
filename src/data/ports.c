@@ -44,12 +44,13 @@ int validate_range(const char *token, int *start, int *end)
         return (-1);
     }
     *start = ft_atoi_dav(left, &limit);
-    if (limit != 0)
+    if (limit != 0 || right[0] == '0')
     {
         free(left);
         free(right);
         return (-1);
     }
+
     *end = ft_atoi_dav(right, &limit);
     if (*start < 0 || *end > 65535 || *start > *end || limit != 0)
     {

@@ -55,17 +55,17 @@ int ft_parser_args(t_config *conf, char **argv)
                 if (parser_result == 1)
                     i++;
             }
-            else if (strcmp(argv[i], "--scan") == 0)
+            else if (strcmp(argv[i], "--speedup") == 0)
             {
-                parser_result = parse_scantypes(conf, argv, i);
+                parser_result = parse_speedup(conf, argv, i);
                 if (parser_result == -1)
                     return (-1);
                 if (parser_result == 1)
                     i++;
             }
-            else if (strcmp(argv[i], "--speedup") == 0)
+            else if (strcmp(argv[i], "--scan") == 0)
             {
-                parser_result = parse_speedup(conf, argv, i);
+                parser_result = parse_scantypes(conf, argv, i);
                 if (parser_result == -1)
                     return (-1);
                 if (parser_result == 1)
@@ -80,6 +80,5 @@ int ft_parser_args(t_config *conf, char **argv)
         }
         i++;
     }
-    
     return (0);
 }

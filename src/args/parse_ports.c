@@ -26,7 +26,7 @@ char    **split_tokens(char *str, t_config *conf)
     int     x = 0;
     int     memo = 0;
 
-     conf->ports_tokens = count_tokens(str);
+    conf->ports_tokens = count_tokens(str);
     if (conf->ports_tokens > 1024)
     {
         printf("❌ Error: `--port' out of range: ( %d )\n", conf->ports_tokens);
@@ -41,6 +41,8 @@ char    **split_tokens(char *str, t_config *conf)
         while (str[i] != ',' && str[i] != '\0')
             i++;
         ports[x] = ft_strndup(&str[memo], i - memo);
+        if (str[i] == ',')
+            i++;
         x++;
     }
     ports[x] = NULL;
@@ -62,6 +64,11 @@ int parse_ports(t_config *conf, char **argv, int i)
 
     arg_value = argv[i + 1];
 
+    if (arg_value[0] == '0')
+    {
+        printf("❌ Error: `--port' You have used an invalid format: ( \"%s\" )\n", arg_value);
+        return (-1);
+    }
     while (arg_value[x] != '\0')
     {
         if (arg_value[x] >= '0' && arg_value[x] <= '9')
