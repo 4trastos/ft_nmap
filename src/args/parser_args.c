@@ -12,14 +12,14 @@ void    init_struct(t_config *conf, int argc)
     conf->file_input = NULL;
     conf->argc = argc;
     conf->scan_type = 0;
-    conf->start_port = 0;
-    conf->end_port = 0;
     conf->ports_tokens = 0;
+    conf->total_ports = 0;
     conf->ports = NULL;
     conf->speedup = 1;
     conf->threads = NULL;
     conf->is_valid = false;
     conf->sockfd = -1;
+    memset(conf->port_bitmap, 0, sizeof(conf->port_bitmap));
 }
 
 int ft_parser_args(t_config *conf, char **argv)

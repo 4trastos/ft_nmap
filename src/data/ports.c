@@ -1,6 +1,6 @@
 #include "ft_nmap.h"
 
-int     find_scripts(char *str)
+int     find_dash(char *str)
 {
     int i = 0;
     int script = 0;
@@ -14,80 +14,121 @@ int     find_scripts(char *str)
     return (script);
 }
 
-int    validate_range(t_config *conf, char *token)
+int validate_range(const char *token, int *start, int *end)
 {
-    char    *start = NULL;
-    char    *end = NULL;
-    int     i = 0;
-    int     limitstart = 0;
-    int     limitend = 0;
+    char    *left = NULL;
+    char    *right = NULL;
+    int     limit = 0;
+    int     len_left;
+    char    *dash = NULL;
 
-    while (token[i] != '\0')
+    dash = strchr(token, '-');
+    if (!dash)
+        return (-1);
+
+    len_left = dash - token;
+    left = ft_strndup((char *)token, len_left);
+    if (!left)
+        return (-1);
+    right = strdup(dash + 1);
+    if (!right)
     {
-        if (token[i] == '-')
-        {
-            start = ft_substr(token, 0, i);
-            end = ft_substr(token, i + 1, (strlen(token) - (i + 1)));
-            break;
-        }
-        i++;
+        free(left);
+        return (-1);
     }
-    conf->start_port = ft_atoi_dav(start, &limitstart);
-    conf->end_port = ft_atoi_dav(end, &limitend);
-    free(start);
-    free(end);
-    if (limitstart == 1 || limitend == 1)
+
+    if (*right == '\0')
+    {
+        free(left);
+        free(right);
         return (-1);
-    if (conf->start_port > conf->end_port)
+    }
+    *start = ft_atoi_dav(left, &limit);
+    if (limit != 0)
+    {
+        free(left);
+        free(right);
         return (-1);
-    if (conf->start_port >= 0 && conf->end_port <= 65535)
-        return (0);
-    return (-1);
+    }
+    *end = ft_atoi_dav(right, &limit);
+    if (*start < 0 || *end > 65535 || *start > *end || limit != 0)
+    {
+        free(left);
+        free(right);
+        return (-1);
+    }
+
+    free(left);
+    free(right);
+    return (0);
 }
 
-int     port_validator(t_config *conf, char **token)
+int     port_validator(t_config *conf, char **tokens)
 {
+    char    *token;
     int     i = 0;
-    int     script = 0;
+    int     dash = 0;
+    int     start = 0;
+    int     end = 0;   
     int     port = 0;
     int     limit = 0;
-    
-    conf->ports = malloc(sizeof(t_port) * (conf->ports_tokens + 1));
-    if (!conf->ports)
-        return(-1);
 
-    while (token[i] != NULL && i < conf->ports_tokens)
+    /* 1- Expandri y validar */
+    
+    while (tokens[i] != NULL && i < conf->ports_tokens)
     {
-        script = find_scripts(token[i]);
-        if (script)
+        token = tokens[i];
+        dash = find_dash(tokens[i]);
+        if (dash)
         {
-            if (script > 1)
+            if (dash > 1)
                 return (-1);
-            if (validate_range(conf, token[i]) != 0)
+            if (validate_range(token, &start, &end) != 0)
             {
-                printf("❌ Error: `--port' out of range: ( %d )\n", conf->end_port);
+                printf("❌ Error: invalid port range \"%s\"\n", token);
                 return (-1);
             }
-            conf->ports[i].start_port = conf->start_port;
-            conf->ports[i].end_port = conf->end_port;
-            conf->ports[i].number = conf->start_port;
+            for (port = start; port <= end; port++)
+                conf->port_bitmap[port] = 1;
+            
         }
         else
         {
-            port = ft_atoi_dav(token[i], &limit);
-            if (port >= 0 && port <= 65535 && limit == 0)
-            {
-                conf->ports[i].start_port = port;
-                conf->ports[i].end_port = port;
-                conf->ports[i].number = port;
-            }
-            else
+            port = ft_atoi_dav(token, &limit);
+            if (port < 0 || port > 65535 || limit != 0)
             {
                 printf("❌ Error: `--port' out of range: ( %d )\n", port);
                 return (-1);
             }
+            conf->port_bitmap[port] = 1;
         }
         i++;
-    }  
+    }
+
+    /* 2. Contar los puertos */
+
+    i = 0;
+    port = 0;
+    while (port < 65536)
+    {
+        if (conf->port_bitmap[port] == 1)
+            i++;
+        port++;
+    }
+    conf->total_ports = i;
+
+    conf->ports = malloc(sizeof(t_port) * conf->total_ports);
+    if (!conf->ports)
+        return(-1);
+
+    i = 0;
+    port = 0;
+    while (port < 65536)
+    {
+        if (conf->port_bitmap[port] == 1)
+            conf->ports[i++].number = port;
+        port++;
+    }
+
     return (0);
 }

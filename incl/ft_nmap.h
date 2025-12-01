@@ -66,9 +66,9 @@ typedef struct s_config
     int                     scan_type;
 
     /* Ports */
-    int                     start_port;
-    int                     end_port;
     int                     ports_tokens;
+    int                     port_bitmap[65536];
+    int                     total_ports;
     t_port                  *ports;
 
     /* Threading */
@@ -92,7 +92,7 @@ int     ft_parser_args(t_config *conf, char **argv);
 int     parse_ip(t_config *conf, char **argv, int i);
 int     parse_ports(t_config *conf, char **argv, int i);
 int     port_validator(t_config *conf, char **token);
-int     validate_range(t_config *conf, char *token);
+int     validate_range(const char *token, int *start, int *end);
 int     parse_speedup(t_config *conf, char **argv, int i);
 int     parse_scantypes(t_config *conf, char **argv, int i);
 
@@ -111,7 +111,7 @@ char    **split_tokens(char *str, t_config *conf);
 int     count_tokens(char *str);
 char    *ft_strndup(char *str, int num);
 void    double_free(char **ports);
-int     find_scripts(char *str);
+int     find_dash(char *str);
 char	*ft_substr(char *str, int start, int len);
 int     ft_strlen(char *str);
 int     ft_atoi_dav(char *str, int *limit);
