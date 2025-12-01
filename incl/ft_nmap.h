@@ -84,7 +84,6 @@ typedef struct s_config
 //*** Init Functions ***/
 
 int     main(int argc, char **argv);
-int     dns_resolution(t_config *conf);
 
 //*** Parser ***/
 
@@ -98,6 +97,11 @@ int     parse_speedup(t_config *conf, char **argv, int i);
 int     parse_scantypes(t_config *conf, char **argv, int i);
 char    *clean_commma(char *str);
 char    **split_scan(char *str, char c);
+
+/*** Socket & DNS ***/
+
+int     dns_resolution(t_config *conf);
+int     socket_creation(t_config *conf);
 
 //*** Show Printouts***/
 

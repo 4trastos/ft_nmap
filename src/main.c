@@ -32,6 +32,8 @@ int main(int argc, char **argv)
         show_help();
     else if (dns_resolution(conf) != 0)
         exit = 1;
+    else if (socket_creation(conf) != 0)
+        exit = 1;
     while (!g_stop && exit == 0 && !conf->show_help)
     {
         printf("ip: ( %s )\n", conf->hostname);
@@ -54,7 +56,7 @@ int main(int argc, char **argv)
 // ✔ calcular speedup
 // ✔ warning de oversubscription
 
-// 2. Resolución de DNS / IP
+// 2. Resolución de DNS / IP (YA HECHO)
 
 // ✔ hostname → IP
 // ✔ verificar que es válida
