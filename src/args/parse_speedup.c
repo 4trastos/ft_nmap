@@ -45,8 +45,10 @@ int     parse_speedup(t_config *conf, char **argv, int i)
 
     conf->nprocs = sysconf(_SC_NPROCESSORS_ONLN);
     if (conf->speedup > conf->nprocs)
-        printf("⚠️  WARNING ⚠️ : Requested --speedup %d worker threads on a machine with %ld physical cores. \nThis is allowed (subject supports up to 250 threads), but CPU oversubscription may slow down the scan.\n\n", 
-            conf->speedup, conf->nprocs);
+    {
+        printf("⚠️  [WARNING]  ⚠️ : Requested --speedup ( %d ) worker threads on a machine with ( %ld ) physical cores. \n", conf->speedup, conf->nprocs);
+        printf("This is allowed (subject supports up to 250 threads), but CPU oversubscription may slow down the scan.\n\n");
+    }
 
     return (1);
 }
