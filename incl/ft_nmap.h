@@ -22,6 +22,8 @@
 # include <netinet/udp.h>
 # include <pcap/pcap.h> 
 
+# define    MAX_PACKET_SIZE 1500
+
 extern volatile sig_atomic_t   g_stop;
 
 typedef enum e_scan_flags
@@ -60,6 +62,7 @@ typedef struct s_config
     char                    *hostname;
     char                    *file_input;
     int                     argc;
+    int                     ttl;
     struct  in_addr         ip_address;
 
     /* Scan Options */
@@ -75,15 +78,49 @@ typedef struct s_config
     long                    nprocs;
     int                     speedup;
     pthread_t               *threads;
+    int                     next_port_idx; 
+
+    /* Mutexes */
+    pthread_mutex_t         work_mutex;         // Para tomar puertos
+    pthread_mutex_t         print_mutex;        // Para imprimir
+    pthread_mutex_t         send_mutex;         // Para sendto() en raw socket
+    pthread_mutex_t         recv_mutex;         // Para recvfrom() en raw socket
 
     /* Runtime */
     bool                    is_valid;
     int                     sockfd;
 }   t_config;
 
+typedef struct s_thread_context
+{
+    int                 thread_id;
+    
+    /* Trabajo */
+    int                *next_port_idx;     // Índice global del puerto
+    pthread_mutex_t    *work_mutex;        // Proteger next_port_idx
+
+    /* Sincronización con main */
+    pthread_mutex_t    *print_mutex;       // Imprimir limpio
+
+    /* Socket RAW compartido */
+    pthread_mutex_t    *send_mutex;        // Proteger sendto()
+    pthread_mutex_t    *recv_mutex;        // Proteger recvfrom()
+
+    /* Buffers propios por hilo */
+    unsigned char       sendbuffer[MAX_PACKET_SIZE];
+    unsigned char       recvbuffer[MAX_PACKET_SIZE];
+
+    /* Destino */
+    struct sockaddr_in  target_addr;
+
+    /* Configuración global */
+    t_config           *conf;
+}   t_thread_context;
+
 //*** Init Functions ***/
 
 int     main(int argc, char **argv);
+void    cleanup(t_config *conf);
 
 //*** Parser ***/
 
@@ -105,7 +142,7 @@ int     socket_creation(t_config *conf);
 
 //*** Show Printouts***/
 
-void    show_help(void);
+void    show_help(t_config *conf);
 
 //** Signals **/
 
@@ -122,5 +159,9 @@ int     find_dash(char *str);
 char	*ft_substr(char *str, int start, int len);
 int     ft_strlen(char *str);
 int     ft_atoi_dav(char *str, int *limit);
+
+/*** Threads ***/
+
+void    worker_thread(t_thread_context *threads, t_config *conf);
 
 #endif

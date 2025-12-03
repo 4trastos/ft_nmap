@@ -19,6 +19,7 @@ void    init_struct(t_config *conf, int argc)
     conf->threads = NULL;
     conf->is_valid = false;
     conf->sockfd = -1;
+    conf->ttl = 64;
     memset(conf->port_bitmap, 0, sizeof(conf->port_bitmap));
 }
 
