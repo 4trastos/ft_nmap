@@ -14,7 +14,7 @@ void    cleanup(t_config *conf)
 int main(int argc, char **argv)
 {
     t_config            *conf;
-    t_thread_context    threads;
+    t_thread_context    *threads;
     unsigned char       *bytes;
     int                 exit = 0;
 
@@ -28,8 +28,16 @@ int main(int argc, char **argv)
     conf = malloc(sizeof(t_config));
     if (!conf)
         return (1);
+    threads = malloc(sizeof(t_thread_context));
+    if (!threads)
+    {
+        free(conf);
+        return (1);
+    }
+
     init_signal();
     init_struct(conf, argc);
+
     if (ft_parser_args(conf, argv) != 0)
         exit = 1;
     if (conf->show_help)
@@ -43,16 +51,25 @@ int main(int argc, char **argv)
         exit = 1;
     else
     {
-        // 1. init mutexes
-        worker_thread(&threads, conf);
-        // 2. crear threads con t_thread_context
-        // 3. esperar a todos los threads (pthread_join)
-        // 4. imprimir resultados finales
+        ft_mutex(threads->work_mutex, INIT);
+        ft_mutex(conf->work_mutex, INIT);
+        if (threads_creation(threads, conf) != 0)
+        {
+            cleanup(conf);
+            free(threads);
+            ft_mutex(threads->work_mutex, DESTROY);
+            ft_mutex(conf->work_mutex,DESTROY);
+            return (1);
+        }
+        worker_thread(threads);
         bytes = (unsigned char *)&conf->ip_address;
         printf("Starting Nmap 7.94SVN ( https://nmap.org ) at 2025-12-03 12:08 CET\n");
         printf("Nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
+        ft_mutex(threads->work_mutex, DESTROY);
+        ft_mutex(conf->work_mutex, DESTROY);
     }
     cleanup(conf);
+    free(threads);
     return (exit);
 }
 

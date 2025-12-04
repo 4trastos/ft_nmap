@@ -26,6 +26,19 @@
 
 extern volatile sig_atomic_t   g_stop;
 
+typedef pthread_mutex_t t_mutex;
+
+typedef enum e_opcode
+{
+    LOCK,
+    UNLOCK,
+    INIT,
+	DESTROY,
+	CREATE,
+	JOIN,
+	DETACH
+}   t_opcode;
+
 typedef enum e_scan_flags
 {
     SCAN_SYN    = 1 << 0,
@@ -81,10 +94,10 @@ typedef struct s_config
     int                     next_port_idx; 
 
     /* Mutexes */
-    pthread_mutex_t         work_mutex;         // Para tomar puertos
-    pthread_mutex_t         print_mutex;        // Para imprimir
-    pthread_mutex_t         send_mutex;         // Para sendto() en raw socket
-    pthread_mutex_t         recv_mutex;         // Para recvfrom() en raw socket
+    t_mutex                 *work_mutex;         // Para tomar puertos
+    t_mutex                 *print_mutex;        // Para imprimir
+    t_mutex                 *send_mutex;         // Para sendto() en raw socket
+    t_mutex                 *recv_mutex;         // Para recvfrom() en raw socket
 
     /* Runtime */
     bool                    is_valid;
@@ -96,15 +109,15 @@ typedef struct s_thread_context
     int                 thread_id;
     
     /* Trabajo */
-    int                *next_port_idx;     // Índice global del puerto
-    pthread_mutex_t    *work_mutex;        // Proteger next_port_idx
+    int                 *next_port_idx;     // Índice global del puerto
+    t_mutex             *work_mutex;        // Proteger next_port_idx
 
     /* Sincronización con main */
-    pthread_mutex_t    *print_mutex;       // Imprimir limpio
+    t_mutex             *print_mutex;       // Imprimir limpio
 
     /* Socket RAW compartido */
-    pthread_mutex_t    *send_mutex;        // Proteger sendto()
-    pthread_mutex_t    *recv_mutex;        // Proteger recvfrom()
+    t_mutex             *send_mutex;        // Proteger sendto()
+    t_mutex             *recv_mutex;        // Proteger recvfrom()
 
     /* Buffers propios por hilo */
     unsigned char       sendbuffer[MAX_PACKET_SIZE];
@@ -113,7 +126,6 @@ typedef struct s_thread_context
     /* Destino */
     struct sockaddr_in  target_addr;
 
-    /* Configuración global */
     t_config           *conf;
 }   t_thread_context;
 
@@ -162,6 +174,10 @@ int     ft_atoi_dav(char *str, int *limit);
 
 /*** Threads ***/
 
-void    worker_thread(t_thread_context *threads, t_config *conf);
+int     threads_creation(t_thread_context *threads, t_config *conf);
+void	*thread_routine(void *data);
+void    worker_thread(t_thread_context *threads);
+void    ft_mutex(t_mutex *mutex, t_opcode opcode);
+void    ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode);
 
 #endif
