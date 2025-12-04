@@ -94,10 +94,10 @@ typedef struct s_config
     int                     next_port_idx; 
 
     /* Mutexes */
-    t_mutex                 *work_mutex;         // Para tomar puertos
-    t_mutex                 *print_mutex;        // Para imprimir
-    t_mutex                 *send_mutex;         // Para sendto() en raw socket
-    t_mutex                 *recv_mutex;         // Para recvfrom() en raw socket
+    t_mutex                 work_mutex;         // Para tomar puertos
+    t_mutex                 print_mutex;        // Para imprimir
+    t_mutex                 send_mutex;         // Para sendto() en raw socket
+    t_mutex                 recv_mutex;         // Para recvfrom() en raw socket
 
     /* Runtime */
     bool                    is_valid;
@@ -107,12 +107,8 @@ typedef struct s_config
 typedef struct s_thread_context
 {
     int                 thread_id;
-    
-    /* Trabajo */
     int                 *next_port_idx;     // Índice global del puerto
     t_mutex             *work_mutex;        // Proteger next_port_idx
-
-    /* Sincronización con main */
     t_mutex             *print_mutex;       // Imprimir limpio
 
     /* Socket RAW compartido */
@@ -144,7 +140,6 @@ int     port_validator(t_config *conf, char **token);
 int     validate_range(const char *token, int *start, int *end);
 int     parse_speedup(t_config *conf, char **argv, int i);
 int     parse_scantypes(t_config *conf, char **argv, int i);
-char    *clean_commma(char *str);
 char    **split_scan(char *str, char c);
 
 /*** Socket & DNS ***/
@@ -174,10 +169,13 @@ int     ft_atoi_dav(char *str, int *limit);
 
 /*** Threads ***/
 
-int     threads_creation(t_thread_context *threads, t_config *conf);
+void     threads_creation(t_config *conf, t_thread_context *ctx_array);
 void	*thread_routine(void *data);
-void    worker_thread(t_thread_context *threads);
 void    ft_mutex(t_mutex *mutex, t_opcode opcode);
 void    ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode);
+
+/*** Scan Ports ***/
+
+int    scan_port(t_thread_context *ctx, int port);
 
 #endif

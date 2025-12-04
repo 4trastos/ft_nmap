@@ -553,3 +553,251 @@ Para tu proyecto debes comprender esto:
 * No hace falta replicar la sintaxis exacta de Nmap real.
 
 ---
+
+
+
+
+Perfecto. Te dejo el **PSEUDOCÓDIGO DEFINITIVO**, estructurado exactamente como debe funcionar tu `ft_nmap`, sin C real, pero lo bastante preciso para que lo traduzcas sin errores.
+
+Esto es tu **guía maestra** a partir de ahora.
+
+---
+
+# ✅ ESTRUCTURA GLOBAL DEL PROGRAMA
+
+## 🧠 VARIABLES GLOBALES
+
+* `g_stop` = 0
+* Señal `SIGINT` → handler pone `g_stop = 1`
+
+---
+
+# ✅ `main` – FLUJO COMPLETO REAL
+
+### 1️⃣ Validación y setup base
+
+* Si `argc == 1` → imprimir Usage → exit
+* `malloc(conf)`
+* `init_struct(conf)`
+
+  * `conf->next_port_idx = 0`
+  * `conf->speedup` inicial
+  * `conf->scan_type = 0`
+* `init_signal()`
+
+---
+
+### 2️⃣ Parsing y preparación
+
+* `ft_parser_args(conf, argv)`
+
+  * Si falla → exit
+* Si `conf->show_help` → `show_help()` → exit
+* `dns_resolution(conf)`
+* `prepare_ports(conf)`  ✅ crea `conf->ports[]` y `conf->total_ports`
+* `prepare_scan(conf)`   ✅ activa flags SCAN_*
+
+---
+
+### 3️⃣ Inicialización de sincronización
+
+* Inicializar:
+
+  * `conf->work_mutex`
+  * `conf->print_mutex`
+  * `conf->send_mutex`
+  * `conf->recv_mutex`
+
+---
+
+### 4️⃣ CREACIÓN DE SOCKET
+
+* `socket_creation(conf)`
+* `conf->sockfd` ya listo y compartido
+
+---
+
+### 5️⃣ CREACIÓN DE HILOS
+
+* Reservar:
+
+  * `conf->threads = malloc(speedup * sizeof(pthread_t))`
+  * `ctx = malloc(speedup * sizeof(t_thread_context))`
+
+* Para cada `i` desde `0` hasta `speedup-1`:
+
+  * `ctx[i].thread_id = i`
+  * `ctx[i].conf = conf`
+  * `ctx[i].target_addr = conf->ip_address`
+  * `ctx[i].work_mutex = &conf->work_mutex`
+  * `ctx[i].send_mutex = &conf->send_mutex`
+  * `ctx[i].recv_mutex = &conf->recv_mutex`
+  * `ctx[i].print_mutex = &conf->print_mutex`
+
+---
+
+### 6️⃣ LANZAMIENTO DE HILOS
+
+* Para cada `i` en `0..speedup-1`:
+
+  * `pthread_create(&conf->threads[i], NULL, thread_routine, &ctx[i])`
+
+---
+
+### 7️⃣ ESPERA DE FINALIZACIÓN
+
+* Para cada `i`:
+
+  * `pthread_join(conf->threads[i])`
+
+---
+
+### 8️⃣ IMPRESIÓN FINAL
+
+* `print_results(conf)` protegido con `print_mutex`
+
+---
+
+### 9️⃣ LIMPIEZA FINAL
+
+* Cerrar socket
+* Destruir mutexes
+* `free(conf->threads)`
+* `free(ctx)`
+* `free(conf->ports)`
+* `free(conf)`
+
+---
+
+# ✅ `thread_routine(void *arg)` – CORAZÓN DEL SCAN
+
+### 0️⃣ Setup
+
+* `ctx = (t_thread_context *)arg`
+* `conf = ctx->conf`
+
+---
+
+### 🔁 BUCLE PRINCIPAL DE TRABAJO
+
+Mientras:
+
+* `!g_stop`
+
+Hacer:
+
+---
+
+### 1️⃣ TOMAR SIGUIENTE PUERTO (SECCIÓN CRÍTICA)
+
+* LOCK `work_mutex`
+* `idx = conf->next_port_idx`
+* `conf->next_port_idx++`
+* UNLOCK `work_mutex`
+
+---
+
+### 2️⃣ CONDICIÓN DE SALIDA
+
+* Si `idx >= conf->total_ports` → SALIR DEL HILO
+
+---
+
+### 3️⃣ OBTENER PUERTO REAL
+
+* `port = conf->ports[idx].number`
+
+---
+
+### 4️⃣ POR CADA TIPO DE SCAN ACTIVO
+
+Si `SCAN_SYN` activo:
+
+* Construir paquete SYN en `ctx->sendbuffer`
+* LOCK `send_mutex`
+* `sendto(sockfd)`
+* UNLOCK `send_mutex`
+* LOCK `recv_mutex`
+* `recvfrom(sockfd)` con timeout
+* UNLOCK `recv_mutex`
+* Analizar respuesta → actualizar `conf->ports[idx].state`
+
+Si `SCAN_FIN`, `SCAN_NULL`, etc → mismo patrón
+
+Si `SCAN_UDP`:
+
+* Paquete UDP + ICMP esperado
+
+---
+
+### 5️⃣ (OPCIONAL) MOSTRAR PROGRESO
+
+* LOCK `print_mutex`
+* imprimir: `"Thread X escaneó puerto Y"`
+* UNLOCK `print_mutex`
+
+---
+
+### 6️⃣ VOLVER AL BUCLE
+
+---
+
+### ✅ EL HILO TERMINA CUANDO:
+
+* Se acaban los puertos
+* `g_stop == 1`
+
+---
+
+# ✅ MANEJO DE CTRL+C (SIGINT)
+
+* El handler cambia `g_stop = 1`
+* Los hilos:
+
+  * Saldrán tras su siguiente iteración
+* `pthread_join` desbloquea
+* Se imprimen resultados parciales
+* Se hace cleanup limpio ✅
+
+---
+
+# ✅ ERRORES QUE YA NO DEBES COMETER
+
+❌ No usar `thread_id` como pthread
+❌ No crear solo 1 `t_thread_context`
+❌ No usar mutex sin inicializar
+❌ No usar `volatile` como sustituto de mutex
+❌ No llamar `worker_thread()` desde main
+✅ El trabajo SOLO vive en `thread_routine`
+
+---
+
+# ✅ TU ARQUITECTURA FINAL ES EXACTAMENTE ESTA:
+
+```
+main
+ ├── parse
+ ├── prepare ports
+ ├── init mutex
+ ├── socket
+ ├── create contexts
+ ├── pthread_create
+ ├── pthread_join
+ ├── print
+ └── cleanup
+```
+
+```
+thread_routine
+ └── while (!g_stop)
+       ├── take next port (mutex)
+       ├── scan port
+       ├── update state
+       └── repeat
+```
+
+---
+
+
+Cuando quieras, en el siguiente mensaje podemos hacer solo **el pseudoflow interno del paquete SYN (paso a paso)** sin código.
+

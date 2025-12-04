@@ -10,7 +10,7 @@ SRC = src/main.c src/args/parser_args.c src/help/show_help.c src/args/parse_port
 	src/scans/scan_ack.c src/scans/scan_fin.c src/scans/scan_null.c src/scans/scan_xmas.c src/scans/scan_udp.c src/network/packet_builder.c \
 	src/network/pcap_capture.c src/network/send_raw_packet.c src/network/socket_setup.c src/threads/scheduler.c src/threads/worker_thread.c \
 	src/output/print_results.c src/utils/time.c src/utils/service_lookup.c src/utils/string_utils.c src/utils/handler_signal.c \
-	src/utils/ft_atoi.c
+	src/utils/ft_atoi.c src/data/scan_ports.c
 
 OBJTS = $(SRC:.c=.o)
 

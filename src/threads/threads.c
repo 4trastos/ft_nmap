@@ -17,7 +17,7 @@ void    ft_mutex(t_mutex *mutex, t_opcode opcode)
 void    ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode)
 {
     if (opcode == CREATE)
-        ptherad_create(thread, NULL, foo, data);
+        pthread_create(thread, NULL, foo, data);
     else if (opcode == JOIN)
         pthread_join(thread, NULL);
     else if (opcode == DETACH)
