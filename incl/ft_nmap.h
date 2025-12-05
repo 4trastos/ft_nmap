@@ -23,6 +23,7 @@
 # include <pcap/pcap.h> 
 
 # define    MAX_PACKET_SIZE 1500
+# define    ICMP_PAYLOAD_SIZE 56
 
 extern volatile sig_atomic_t   g_stop;
 
@@ -58,6 +59,13 @@ typedef enum e_port_state
     PORT_UNFILTERED,
     PORT_OPEN_FILTERED
 }   t_port_state;
+
+struct ping_packet
+{
+    struct icmphdr   icmp_hdr;
+    struct timeval   timestamp;
+    char             data[ICMP_PAYLOAD_SIZE];
+};
 
 typedef struct s_port
 {
@@ -121,61 +129,66 @@ typedef struct s_thread_context
 
     /* Destino */
     struct sockaddr_in  target_addr;
+    struct ping_packet  packets[MAX_PACKET_SIZE];
 
     t_config           *conf;
 }   t_thread_context;
 
 //*** Init Functions ***/
 
-int     main(int argc, char **argv);
-void    cleanup(t_config *conf);
+int         main(int argc, char **argv);
+void        cleanup(t_config *conf);
 
 //*** Parser ***/
 
-void    init_struct(t_config *conf, int argc);
-int     ft_parser_args(t_config *conf, char **argv);
-int     parse_ip(t_config *conf, char **argv, int i);
-int     parse_ports(t_config *conf, char **argv, int i);
-int     port_validator(t_config *conf, char **token);
-int     validate_range(const char *token, int *start, int *end);
-int     parse_speedup(t_config *conf, char **argv, int i);
-int     parse_scantypes(t_config *conf, char **argv, int i);
-char    **split_scan(char *str, char c);
+void        init_struct(t_config *conf, int argc);
+int         ft_parser_args(t_config *conf, char **argv);
+int         parse_ip(t_config *conf, char **argv, int i);
+int         parse_ports(t_config *conf, char **argv, int i);
+int         port_validator(t_config *conf, char **token);
+int         validate_range(const char *token, int *start, int *end);
+int         parse_speedup(t_config *conf, char **argv, int i);
+int         parse_scantypes(t_config *conf, char **argv, int i);
+char        **split_scan(char *str, char c);
 
 /*** Socket & DNS ***/
 
-int     dns_resolution(t_config *conf);
-int     socket_creation(t_config *conf);
+int         dns_resolution(t_config *conf);
+int         socket_creation(t_config *conf);
+int         icmp_creation(t_thread_context *ctx);
+uint16_t    calculate_checksum(void *packet, size_t len);
+int         send_socket(t_thread_context *ctx, int port);
+int         receive_response(t_thread_context *ctx);
 
 //*** Show Printouts***/
 
-void    show_help(t_config *conf);
+void        show_help(t_config *conf);
 
 //** Signals **/
 
-void    init_signal(void);
-void    handler_singint(int signum);
+void        init_signal(void);
+void        handler_singint(int signum);
 
 /*** Utils Functions ***/
 
-char    **split_tokens(char *str, t_config *conf);
-int     count_tokens(char *str);
-char    *ft_strndup(char *str, int num);
-void    double_free(char **ports);
-int     find_dash(char *str);
-char	*ft_substr(char *str, int start, int len);
-int     ft_strlen(char *str);
-int     ft_atoi_dav(char *str, int *limit);
+char        **split_tokens(char *str, t_config *conf);
+int         count_tokens(char *str);
+char        *ft_strndup(char *str, int num);
+void        double_free(char **ports);
+int         find_dash(char *str);
+char	    *ft_substr(char *str, int start, int len);
+int         ft_strlen(char *str);
+int         ft_atoi_dav(char *str, int *limit);
 
 /*** Threads ***/
 
-void     threads_creation(t_config *conf, t_thread_context *ctx_array);
-void	*thread_routine(void *data);
-void    ft_mutex(t_mutex *mutex, t_opcode opcode);
-void    ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode);
+void        threads_creation(t_config *conf, t_thread_context *ctx_array);
+void	    *thread_routine(void *data);
+void        ft_mutex(t_mutex *mutex, t_opcode opcode);
+void        ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode);
 
 /*** Scan Ports ***/
 
-int    scan_port(t_thread_context *ctx, int port);
+int         scan_port(t_thread_context *ctx, int port);
 
 #endif 

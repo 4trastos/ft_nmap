@@ -2,12 +2,9 @@
 
 int    scan_port(t_thread_context *ctx, int port)
 {
-    (void)port;
-    struct sockaddr_in  dest;
     struct sockaddr_in  recv_adr;
     socklen_t           addr_len_recv;
     unsigned char       buffer[512];
-    ssize_t             sent_bytes;
     ssize_t             recv_bytes;
     int                 recv_sock;
     uint16_t            dest_port;
@@ -37,24 +34,21 @@ int    scan_port(t_thread_context *ctx, int port)
     
     ft_mutex(ctx->send_mutex, LOCK);
 
-    memset(&dest, 0, sizeof(dest));
-    dest.sin_family = AF_INET;
-    dest.sin_port = htons(port);
-    dest.sin_addr = ctx->conf->ip_address;
-
     struct timeval start;
     struct timeval end;
     gettimeofday(&start, NULL);
 
-    // enviar UDP
-    sent_bytes = sendto(ctx->conf->sockfd, "X", 1, ctx->conf->scan_type, (struct sockaddr *)&dest, sizeof(dest));
-    if (sent_bytes < 0)
-        printf("ft_nmap: sendto ( %s )\n", strerror(errno));
-    
+    if (icmp_creation(ctx) != 0)
+        return (-1);
+    if (send_socket(ctx, port) != 0)
+        return (-1);
+
     ft_mutex(ctx->send_mutex, UNLOCK);
     ft_mutex(ctx->recv_mutex,LOCK);
 
     // recibir ICMP
+    if (receive_response(ctx) != 0)
+        return (-1);
     addr_len_recv = sizeof(recv_adr);
     recv_bytes = recvfrom(recv_sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&recv_adr, &addr_len_recv);
     gettimeofday(&end, NULL);
