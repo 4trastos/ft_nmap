@@ -27,13 +27,15 @@ int    scan_port(t_thread_context *ctx, int port)
 
     // timeput de recepción
     struct timeval timeout = {3, 0};
-    if (setsockopt(ctx->conf->sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
+    if (setsockopt(recv_sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1)
     {
         printf("ft_nmap: setsockopt (SO_RCVTIMEO): %s\n", strerror(errno));
         close(ctx->conf->sockfd);
         close(recv_sock);
         return (-1);
     }
+    
+    ft_mutex(ctx->send_mutex, LOCK);
     
     memset(&dest, 0, sizeof(dest));
     dest.sin_family = AF_INET;

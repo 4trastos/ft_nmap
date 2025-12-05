@@ -73,7 +73,6 @@ int main(int argc, char **argv)
         for (int i = 0; i < conf->speedup; i++)
             pthread_join(conf->threads[i], NULL);
 
-        ft_mutex(threads->work_mutex, DESTROY);
         ft_mutex(&conf->work_mutex, DESTROY);
         ft_mutex(&conf->print_mutex,DESTROY);
         ft_mutex(&conf->recv_mutex, DESTROY);
