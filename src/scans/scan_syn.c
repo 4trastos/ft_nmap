@@ -96,3 +96,69 @@ int send_syn_packet(t_thread_context *ctx, int port)
 
     return (0);
 }
+
+int receive_syn_response(t_thread_context *ctx, int port)
+{
+    struct sockaddr_in  recv_addr;
+    socklen_t           addr_len = sizeof(recv_addr);
+    ssize_t             recv_bytes;
+    struct iphdr        *ip;
+    struct tcphdr       *tcp;
+    struct icmphdr      *icmp;
+
+    ft_mutex(ctx->recv_mutex, LOCK);
+
+    recv_bytes = recvfrom(ctx->conf->sockfd,
+                           ctx->recvbuffer,
+                           MAX_PACKET_SIZE,
+                           0,
+                           (struct sockaddr *)&recv_addr,
+                           &addr_len);
+
+    ft_mutex(ctx->recv_mutex, UNLOCK);
+
+    if (recv_bytes < 0)
+    {
+        // TIMEOUT ⇒ FILTRADO
+        set_port_state(ctx->conf, port, PORT_FILTERED);
+        return (0);
+    }
+
+    ip = (struct iphdr *)ctx->recvbuffer;
+
+    // ================== TCP RESPONSE ==================
+    if (ip->protocol == IPPROTO_TCP)
+    {
+        tcp = (struct tcphdr *)(ctx->recvbuffer + ip->ihl * 4);
+
+        // ✅ SYN + ACK → OPEN
+        if (tcp->syn && tcp->ack)
+        {
+            set_port_state(ctx->conf, port, PORT_OPEN);
+            return (0);
+        }
+
+        // ✅ RST → CLOSED
+        if (tcp->rst)
+        {
+            set_port_state(ctx->conf, port, PORT_CLOSED);
+            return (0);
+        }
+    }
+
+    // ================== ICMP RESPONSE ==================
+    if (ip->protocol == IPPROTO_ICMP)
+    {
+        icmp = (struct icmphdr *)(ctx->recvbuffer + ip->ihl * 4);
+
+        if (icmp->type == ICMP_DEST_UNREACH)
+        {
+            set_port_state(ctx->conf, port, PORT_FILTERED);
+            return (0);
+        }
+    }
+
+    // Default: desconocido → filtrado
+    set_port_state(ctx->conf, port, PORT_FILTERED);
+    return (0);
+}

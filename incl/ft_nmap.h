@@ -210,6 +210,7 @@ int         fin_scan(t_thread_context *ctx, int port);
 int         xmas_scan(t_thread_context *ctx, int port);
 int         ack_scan(t_thread_context *ctx, int port);
 int         udp_scan(t_thread_context *ctx, int port);
+void        set_port_state(t_config *conf, int port, t_port_state state);
 
 /*** SYN SCAN ***/
 
