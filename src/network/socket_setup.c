@@ -1,8 +1,14 @@
 #include "ft_nmap.h"
 
+//    0800 0000 0001 0001 Paquete pequeño
+//    0800 = type(8) + code(0)
+//    0000 = checksum (temporalmente 0)
+//    0001 = id(1)
+//    0001 = sequence(1)
+
 uint16_t    calculate_checksum(void *packet, size_t len)
 {
-    uint32_t    sum;
+    uint32_t    sum = 0;
     uint16_t    *aux = packet;
 
     for (size_t i = 0; i < len / 2; i++)
@@ -14,46 +20,37 @@ uint16_t    calculate_checksum(void *packet, size_t len)
     return (~sum); 
 }
 
-int     icmp_creation(t_thread_context *ctx)
+int     icmp_creation(t_thread_context *ctx, int port)
 {
-    struct ping_packet  *packet = NULL;
+    int idx = port % MAX_PACKET_SIZE;
 
-    if (packet->icmp_hdr.un.echo.sequence >= MAX_PACKET_SIZE)
-        return (-1);
-    packet = ctx->thread_id;
-  
-    packet->icmp_hdr.type = 8;
-    packet->icmp_hdr.code = 0;
-    packet->icmp_hdr.checksum = 0;
-    packet->icmp_hdr.un.echo.id = getpid();
-    packet->icmp_hdr.un.echo.sequence = ctx->thread_id;
-    gettimeofday(&packet->timestamp, NULL);
+    memset(&ctx->packets[idx], 0 , sizeof(struct ping_packet));
+    ctx->packets[idx].icmp_hdr.type = 8;
+    ctx->packets[idx].icmp_hdr.code = 0;
+    ctx->packets[idx].icmp_hdr.checksum = 0;
+    ctx->packets[idx].icmp_hdr.un.echo.id = getpid();
+    ctx->packets[idx].icmp_hdr.un.echo.sequence = ctx->thread_id;
+    gettimeofday(&ctx->packets[idx].timestamp, NULL);
 
-    memset(packet->data, 0, ICMP_PAYLOAD_SIZE);
-    packet->icmp_hdr.checksum = calculate_checksum(packet, sizeof(struct ping_packet));
-    ctx->thread_id++;
-    return (0);
+    memset(ctx->packets[idx].data, 0, ICMP_PAYLOAD_SIZE);
+    ctx->packets[idx].icmp_hdr.checksum = calculate_checksum(&ctx->packets[idx], sizeof(struct ping_packet));
+    return (idx);
 }
 
 
-int send_socket(t_thread_context *ctx, int port)
+int send_socket(t_thread_context *ctx, int port, int idx)
 {
-    struct ping_packet  *packet;
-    size_t              sent_bytes;
-    int                 sequencie;
-
-    sequencie = ctx->thread_id - 1;
-    packet = &ctx->packets[sequencie];
+    size_t  sent_bytes = 0;
 
     memset(&ctx->target_addr,0, sizeof(ctx->target_addr));
     ctx->target_addr.sin_family = AF_INET;
     ctx->target_addr.sin_port = htons(port);
     ctx->target_addr.sin_addr = ctx->conf->ip_address;
 
-    sent_bytes = sendto(ctx->conf->sockfd, packet, 1, ctx->conf->scan_type, (struct sockaddr *)&ctx->target_addr, sizeof(ctx->target_addr));
+    sent_bytes = sendto(ctx->conf->sockfd, &ctx->packets[idx], sizeof(struct ping_packet), 0, (struct sockaddr *)&ctx->target_addr, sizeof(ctx->target_addr));
     if (sent_bytes < 0)
     {
-        printf("ft_nmap: sendto ( %s )\n", strerror(errno));
+        printf("ft_nmap: sendto error: ( %s )\n", strerror(errno));
         close(ctx->conf->sockfd);
         return (-1);
     }

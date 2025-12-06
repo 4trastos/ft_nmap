@@ -11,7 +11,7 @@ void    init_struct(t_config *conf, int argc)
     conf->hostname = NULL;
     conf->file_input = NULL;
     conf->argc = argc;
-    conf->scan_type = 0;
+    conf->scan_type = SCAN_SYN;
     conf->ports_tokens = 0;
     conf->total_ports = 0;
     conf->ports = NULL;

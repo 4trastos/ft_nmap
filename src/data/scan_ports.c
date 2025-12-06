@@ -1,29 +1,30 @@
 #include "ft_nmap.h"
 
 int    scan_port(t_thread_context *ctx, int port)
-{
-    uint16_t            dest_port;
-    
+{ 
+    int idx = 0;
+
     ft_mutex(ctx->send_mutex, LOCK);
 
     struct timeval start;
     struct timeval end;
     gettimeofday(&start, NULL);
 
-    if (icmp_creation(ctx) != 0)
+    idx =  icmp_creation(ctx, port);
+    if (send_socket(ctx, port, idx) != 0)
         return (-1);
-    if (send_socket(ctx, port) != 0)
+    
+     if (dispatch_scan(ctx, port) == -1)
         return (-1);
 
     ft_mutex(ctx->send_mutex, UNLOCK);
     ft_mutex(ctx->recv_mutex,LOCK);
-
-    // recibir ICMP
+    
     if (receive_response(ctx, port) != 0)
         return (-1);
 
-    if (analysis_flags(buffer, recv_bytes, ctx->conf->ip_address, dest_port) == -1)
-        printf("ft_nmap: scan flags ( %s )\n", buffer);        
+    if (analysis_flags(ctx, port) == -1)
+        printf("ft_nmap: scan flags ( %s )\n", ctx->recvbuffer);        
     gettimeofday(&end, NULL);
     
     ft_mutex(ctx->recv_mutex, UNLOCK);

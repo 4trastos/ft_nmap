@@ -68,8 +68,8 @@ int main(int argc, char **argv)
         ft_mutex(&conf->print_mutex, INIT);
         ft_mutex(&conf->recv_mutex, INIT);
         ft_mutex(&conf->send_mutex, INIT);
-        threads_creation(conf, threads);
 
+        threads_creation(conf, threads);
         for (int i = 0; i < conf->speedup; i++)
             pthread_join(conf->threads[i], NULL);
 

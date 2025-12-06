@@ -18,9 +18,13 @@
 # include <netdb.h>
 # include <netinet/in.h>
 # include <netinet/ip.h>
+# include <netinet/tcp.h>
 # include <netinet/ip_icmp.h>
 # include <netinet/udp.h>
-//# include <pcap/pcap.h> 
+# include <netinet/tcp.h>
+# include <arpa/inet.h>
+# include <pcap/pcap.h> 
+
 
 # define    MAX_PACKET_SIZE 1500
 # define    ICMP_PAYLOAD_SIZE 56
@@ -28,6 +32,15 @@
 extern volatile sig_atomic_t   g_stop;
 
 typedef pthread_mutex_t t_mutex;
+
+struct pseudo_header
+{
+    uint32_t    src_addr;
+    uint32_t    dst_addr;
+    uint8_t     zero;
+    uint8_t     protocol;
+    uint16_t    tcp_length;
+};
 
 typedef enum e_opcode
 {
@@ -155,9 +168,9 @@ char        **split_scan(char *str, char c);
 
 int         dns_resolution(t_config *conf);
 int         socket_creation(t_config *conf);
-int         icmp_creation(t_thread_context *ctx);
+int         icmp_creation(t_thread_context *ctx, int port);
 uint16_t    calculate_checksum(void *packet, size_t len);
-int         send_socket(t_thread_context *ctx, int port);
+int         send_socket(t_thread_context *ctx, int port, int idx);
 int         receive_response(t_thread_context *ctx, int port);
 
 //*** Show Printouts***/
@@ -190,6 +203,19 @@ void        ft_threads(t_thread_context *thread, void *(*foo)(void *), void *dat
 /*** Scan Ports ***/
 
 int         scan_port(t_thread_context *ctx, int port);
-int         analysis_flags(t_thread_context *ctx);
+int         analysis_flags(t_thread_context *ctx, int port);
+int         syn_scan(t_thread_context *ctx, int port);
+int         null_scan(t_thread_context *ctx, int port);
+int         fin_scan(t_thread_context *ctx, int port);
+int         xmas_scan(t_thread_context *ctx, int port);
+int         ack_scan(t_thread_context *ctx, int port);
+int         udp_scan(t_thread_context *ctx, int port);
+
+/*** SYN SCAN ***/
+
+int         syn_packet_build(t_thread_context *ctx, int port);
+int         syn_packet_build(t_thread_context *ctx, int port);
+int         send_syn_packet(t_thread_context *ctx, int port);
+int         receive_syn_response(t_thread_context *ctx, int port);
 
 #endif 
