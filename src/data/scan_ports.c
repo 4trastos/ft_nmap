@@ -35,8 +35,8 @@ int    scan_port(t_thread_context *ctx, int port)
     if (receive_response(ctx, port) != 0)
         return (-1);
 
-    if (analysis_flags(ctx, port) == -1)
-        printf("ft_nmap: scan flags ( %s )\n", ctx->recvbuffer);        
+    // if (analysis_flags(ctx, port) == -1)
+    //     printf("ft_nmap: scan flags ( %s )\n", ctx->recvbuffer);        
     gettimeofday(&end, NULL);
     
     ft_mutex(ctx->recv_mutex, UNLOCK);
