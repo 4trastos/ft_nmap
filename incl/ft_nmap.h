@@ -20,7 +20,7 @@
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
 # include <netinet/udp.h>
-# include <pcap/pcap.h> 
+//# include <pcap/pcap.h> 
 
 # define    MAX_PACKET_SIZE 1500
 # define    ICMP_PAYLOAD_SIZE 56
@@ -158,7 +158,7 @@ int         socket_creation(t_config *conf);
 int         icmp_creation(t_thread_context *ctx);
 uint16_t    calculate_checksum(void *packet, size_t len);
 int         send_socket(t_thread_context *ctx, int port);
-int         receive_response(t_thread_context *ctx);
+int         receive_response(t_thread_context *ctx, int port);
 
 //*** Show Printouts***/
 
@@ -190,5 +190,6 @@ void        ft_threads(t_thread_context *thread, void *(*foo)(void *), void *dat
 /*** Scan Ports ***/
 
 int         scan_port(t_thread_context *ctx, int port);
+int         analysis_flags(t_thread_context *ctx);
 
 #endif 
