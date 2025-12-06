@@ -66,8 +66,7 @@ int syn_packet_build(t_thread_context *ctx, int port)
     memcpy(pseudo_packet, &psh, sizeof(struct pseudo_header));
     memcpy(pseudo_packet + sizeof(struct pseudo_header), tcp, sizeof(struct tcphdr));
 
-    tcp->check = calculate_checksum(pseudo_packet,
-        sizeof(struct pseudo_header) + sizeof(struct tcphdr));
+    tcp->check = calculate_checksum(pseudo_packet, sizeof(struct pseudo_header) + sizeof(struct tcphdr));
 
     return (0);
 }
@@ -107,14 +106,7 @@ int receive_syn_response(t_thread_context *ctx, int port)
     struct icmphdr      *icmp;
 
     ft_mutex(ctx->recv_mutex, LOCK);
-
-    recv_bytes = recvfrom(ctx->conf->sockfd,
-                           ctx->recvbuffer,
-                           MAX_PACKET_SIZE,
-                           0,
-                           (struct sockaddr *)&recv_addr,
-                           &addr_len);
-
+    recv_bytes = recvfrom(ctx->conf->sockfd, ctx->recvbuffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&recv_addr, &addr_len);
     ft_mutex(ctx->recv_mutex, UNLOCK);
 
     if (recv_bytes < 0)
