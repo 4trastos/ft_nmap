@@ -12,7 +12,6 @@ void set_port_state(t_config *conf, int port, t_port_state state)
     }
 }
 
-
 int    scan_port(t_thread_context *ctx, int port)
 { 
     int idx = 0;
