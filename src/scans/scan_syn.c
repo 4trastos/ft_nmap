@@ -36,7 +36,7 @@ int syn_packet_build(t_thread_context *ctx, int port)
     ip->ttl = ctx->conf->ttl;
     ip->protocol = IPPROTO_TCP;
     ip->check = 0;
-    ip->saddr = inet_addr("192.168.1.100");   // luego lo automatizamos
+    ip->saddr = get_local_ip(ctx->conf->sockfd);
     ip->daddr = ctx->conf->ip_address.s_addr;
 
     ip->check = calculate_checksum(ip, sizeof(struct iphdr));
@@ -123,29 +123,17 @@ int receive_syn_response(t_thread_context *ctx, int port)
     {
         tcp = (struct tcphdr *)(ctx->recvbuffer + ip->ihl * 4);
 
-        // ✅ SYN + ACK → OPEN
+        // SYN + ACK → OPEN
         if (tcp->syn && tcp->ack)
         {
             set_port_state(ctx->conf, port, PORT_OPEN);
             return (0);
         }
 
-        // ✅ RST → CLOSED
+        // RST → CLOSED
         if (tcp->rst)
         {
             set_port_state(ctx->conf, port, PORT_CLOSED);
-            return (0);
-        }
-    }
-
-    // ================== ICMP RESPONSE ==================
-    if (ip->protocol == IPPROTO_ICMP)
-    {
-        icmp = (struct icmphdr *)(ctx->recvbuffer + ip->ihl * 4);
-
-        if (icmp->type == ICMP_DEST_UNREACH)
-        {
-            set_port_state(ctx->conf, port, PORT_FILTERED);
             return (0);
         }
     }

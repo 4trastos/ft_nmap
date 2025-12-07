@@ -1,23 +1,5 @@
 #include "ft_nmap.h"
 
-int dispatch_scan(t_thread_context *ctx, int port)
-{
-    if (ctx->conf->scan_type & SCAN_SYN)
-        return (syn_scan(ctx, port));
-    if (ctx->conf->scan_type & SCAN_NULL)
-        return (null_scan(ctx, port));
-    if (ctx->conf->scan_type & SCAN_FIN)
-        return (fin_scan(ctx, port));
-    if (ctx->conf->scan_type & SCAN_XMAS)
-        return (xmas_scan(ctx, port));
-    if (ctx->conf->scan_type & SCAN_ACK)
-        return (ack_scan(ctx, port));
-    if (ctx->conf->scan_type & SCAN_UDP)
-        return (udp_scan(ctx, port));
-
-    return (-1);
-}
-
 char    **split_scan(char *str, char c)
 {
     char    **new;

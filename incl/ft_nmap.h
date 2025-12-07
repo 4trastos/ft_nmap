@@ -75,9 +75,9 @@ typedef enum e_port_state
 
 struct ping_packet
 {
-    struct icmphdr   icmp_hdr;
-    struct timeval   timestamp;
-    char             data[ICMP_PAYLOAD_SIZE];
+    struct icmphdr          icmp_hdr;
+    struct timeval          timestamp;
+    char                    data[ICMP_PAYLOAD_SIZE];
 };
 
 typedef struct s_port
@@ -163,6 +163,7 @@ int         validate_range(const char *token, int *start, int *end);
 int         parse_speedup(t_config *conf, char **argv, int i);
 int         parse_scantypes(t_config *conf, char **argv, int i);
 char        **split_scan(char *str, char c);
+uint32_t    get_local_ip(int sockfd);
 
 /*** Socket & DNS ***/
 

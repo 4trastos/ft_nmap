@@ -1,5 +1,16 @@
 #include "ft_nmap.h"
 
+uint32_t    get_local_ip(int sockfd)
+{
+    struct sockaddr_in local;
+    socklen_t   len = sizeof(local);
+
+    memset(&local, 0, sizeof(local));
+    if (getsockname(sockfd, (struct sockaddr *)&local, &len) == -1)
+        return (0);
+    return (local.sin_addr.s_addr);
+}
+
 int dns_resolution(t_config *conf)
 {
     struct addrinfo     hints;
