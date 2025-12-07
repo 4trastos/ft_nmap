@@ -39,13 +39,13 @@ int    scan_port(t_thread_context *ctx, int port)
     if (dispatch_scan(ctx, port) == -1)
         return (-1);     
     gettimeofday(&end, NULL);
-    ft_mutex(ctx->print_mutex, LOCK);
+    // ft_mutex(ctx->print_mutex, LOCK);
 
-    if (ctx->conf->ports[port].state == PORT_OPEN)
-        printf("%d/tcp OPEN\n", ctx->conf->ports[port].number);
+    // if (ctx->conf->ports[port].state == PORT_OPEN)
+    //     printf("%d/tcp OPEN\n", ctx->conf->ports[port].number);
 
-    //show_result(); // hay que crearla
-    ft_mutex(ctx->print_mutex, UNLOCK); 
+    // //show_result(); // hay que crearla
+    // ft_mutex(ctx->print_mutex, UNLOCK); 
 
     return (0);
 }

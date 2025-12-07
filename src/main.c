@@ -72,11 +72,24 @@ int main(int argc, char **argv)
         threads_creation(conf, threads);
         for (int i = 0; i < conf->speedup; i++)
             pthread_join(conf->threads[i], NULL);
+        
+        ft_mutex(&conf->print_mutex, LOCK);
+
+        printf("[DEBUG TOTAL_PORTS]:  ( %d ) 01\n", conf->total_ports);
+        for (int i = 0; i < conf->total_ports; i++)
+        {
+            printf("[DEBUG]: 02\n");
+            if (conf->ports[i].state == PORT_OPEN)
+                printf("%d/tcp OPEN\n", conf->ports[i].number);
+        }
+
+        ft_mutex(&conf->print_mutex, UNLOCK); 
 
         ft_mutex(&conf->work_mutex, DESTROY);
         ft_mutex(&conf->print_mutex,DESTROY);
         ft_mutex(&conf->recv_mutex, DESTROY);
         ft_mutex(&conf->send_mutex, DESTROY);
+        printf("[DEBUG]: 03\n");
     }
     cleanup(conf);
     if (threads != NULL)
