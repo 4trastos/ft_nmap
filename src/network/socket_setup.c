@@ -40,7 +40,7 @@ int     icmp_creation(t_thread_context *ctx, int port)
 
 int send_socket(t_thread_context *ctx, int port, int idx)
 {
-    size_t  sent_bytes = 0;
+    ssize_t  sent_bytes = 0;
 
     memset(&ctx->target_addr,0, sizeof(ctx->target_addr));
     ctx->target_addr.sin_family = AF_INET;

@@ -103,7 +103,6 @@ int receive_syn_response(t_thread_context *ctx, int port)
     ssize_t             recv_bytes;
     struct iphdr        *ip;
     struct tcphdr       *tcp;
-    struct icmphdr      *icmp;
 
     ft_mutex(ctx->recv_mutex, LOCK);
     recv_bytes = recvfrom(ctx->conf->sockfd, ctx->recvbuffer, MAX_PACKET_SIZE, 0, (struct sockaddr *)&recv_addr, &addr_len);

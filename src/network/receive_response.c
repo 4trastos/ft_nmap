@@ -1,6 +1,6 @@
 #include "ft_nmap.h"
 
-int         receive_response(t_thread_context *ctx, int port)
+/* int         receive_response(t_thread_context *ctx, int port)
 {
     struct sockaddr_in  recv_addr;
     struct iphdr        *ip_header;
@@ -46,4 +46,4 @@ int         receive_response(t_thread_context *ctx, int port)
     }
     
     return (0);
-}
+} */
