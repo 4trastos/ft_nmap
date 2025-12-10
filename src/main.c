@@ -40,6 +40,8 @@ int main(int argc, char **argv)
         show_help(conf);
         return (0);
     }
+    if (set_default_ports(conf) != 0)
+        return (1);
     else if (dns_resolution(conf) != 0)
         exit = 1;
     else if (socket_creation(conf) != 0)

@@ -9,7 +9,7 @@ void    show_help(t_config *conf)
     printf("\nOptions:\n");
     printf(" --help                     Show this help message and exit\n");
     printf(" --ip <address>             Target IPv4 address or hostname (FQDN allowed)\n");
-    printf(" --ports <range/list>       Ports to scan:\n");
+    printf(" --ports <range/list>       Ports to scan (max 1024 total):\n");
     printf("                               - Examples: 1-10, 80, 22,80,443, 1,5-15\n");
     printf("                               - Default: 1-1024\n");
     printf(" --scan <types>             Scan types: SYN, NULL, FIN, XMAS, ACK, UDP\n");

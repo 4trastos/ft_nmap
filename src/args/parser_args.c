@@ -31,6 +31,7 @@ int ft_parser_args(t_config *conf, char **argv)
     if (argv[i][0] != '-')
     {
         printf("❌ Error: %s Usage: --ip <IPv4 | hostname> [--ports <ports>] [--speedup <number>] [--scan <type>] ❌\n", argv[0]);
+        conf->is_valid = false;
         return (-1);
     }
 
