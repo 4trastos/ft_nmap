@@ -15,7 +15,9 @@ void    show_help(t_config *conf)
     printf(" --scan <types>             Scan types: SYN, NULL, FIN, XMAS, ACK, UDP\n");
     printf("                               - Example: --scan SYN,FIN,XMAS\n");
     printf("                               - Default: all scans\n");
-    printf(" --speedup <n>              Number of threads (1 to 250)\n");
+    printf(" --speedup <n>              Number of threads (0 to 250)\n");
+    printf("                               0 = sequential scan (no threads)\n");
+    printf("                               Default: 0\n");
     return; 
 }
 

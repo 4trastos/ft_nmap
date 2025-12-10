@@ -16,10 +16,10 @@ int     parse_speedup(t_config *conf, char **argv, int i)
             return (-1);
         }
         arg_value = argv[i + 1];
-        if (arg_value[x] == '0')
+        if (arg_value[x] == '0' && arg_value[1] != '\0')
         {
             printf("❌ Error: `--speedup' You have used an invalid format: ( \"%s\" )\n", arg_value);
-            return (-1);
+            return (1);
         }
 
         while (arg_value[x] != '\0')
@@ -33,11 +33,11 @@ int     parse_speedup(t_config *conf, char **argv, int i)
             }
         }
         conf->speedup = ft_atoi_dav(arg_value, &limit);
-        if (limit == 1 || conf->speedup == 0 || conf->speedup > 250)
+        if (limit == 1 || conf->speedup < 0 || conf->speedup > 250)
         {
             if (limit == 1)
                 printf("❌ Error: `--speedup' exceeds INT_MAX: ( \"%s\" )\n", arg_value);
-            else if (conf->speedup == 0 || conf->speedup > 250)
+            else if (conf->speedup < 0 || conf->speedup > 250)
                 printf("❌ Error: `--speedup' You have used an invalid format: ( \"%s\" )\n", arg_value);
             return (-1);
         }

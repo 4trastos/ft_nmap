@@ -15,7 +15,7 @@ void    init_struct(t_config *conf, int argc)
     conf->ports_tokens = 0;
     conf->total_ports = 0;
     conf->ports = NULL;
-    conf->speedup = 1;
+    conf->speedup = 0;
     conf->threads = NULL;
     conf->is_valid = true;
     conf->sockfd = -1;

@@ -20,6 +20,8 @@ int main(int argc, char **argv)
     struct timeval      start, end;
     time_t              rawtime;
     struct tm           *timeinfo;
+    struct servent      *service;
+    const char          *service_name;
     char                timebuff[80];
     unsigned char       *bytes = 0;
     int                 exit = 0;
@@ -63,63 +65,75 @@ int main(int argc, char **argv)
 
         show_configuration(conf);
 
-        threads = malloc(sizeof(t_thread_context) * conf->speedup);
-        if (!threads)
+        conf->speedup = 1;
+        if (conf->speedup == 0)
         {
-            free(conf);
-            return (1);
+            if (sequential_scan(conf) != 0)
+            {
+                cleanup(conf);
+                return (1);
+            }
         }
-        conf->threads = malloc(sizeof(pthread_t) * conf->speedup);
-        if (!conf->threads)
+        else
         {
-            cleanup(conf);
+            threads = malloc(sizeof(t_thread_context) * conf->speedup);
+            if (!threads)
+            {
+                free(conf);
+                return (1);
+            }
+            conf->threads = malloc(sizeof(pthread_t) * conf->speedup);
+            if (!conf->threads)
+            {
+                cleanup(conf);
+                free(threads);
+                return (1);
+            }
+    
+            ft_mutex(&conf->work_mutex, INIT);
+            ft_mutex(&conf->print_mutex, INIT);
+            ft_mutex(&conf->recv_mutex, INIT);
+            ft_mutex(&conf->send_mutex, INIT);
+    
+            threads_creation(conf, threads);
+            for (int i = 0; i < conf->speedup; i++)
+                pthread_join(conf->threads[i], NULL);
+
+            ft_mutex(&conf->work_mutex, DESTROY);
+            ft_mutex(&conf->print_mutex,DESTROY);
+            ft_mutex(&conf->recv_mutex, DESTROY);
+            ft_mutex(&conf->send_mutex, DESTROY);
+
             free(threads);
-            return (1);
+            threads = NULL;
         }
-
-        ft_mutex(&conf->work_mutex, INIT);
-        ft_mutex(&conf->print_mutex, INIT);
-        ft_mutex(&conf->recv_mutex, INIT);
-        ft_mutex(&conf->send_mutex, INIT);
-
-        threads_creation(conf, threads);
-        for (int i = 0; i < conf->speedup; i++)
-            pthread_join(conf->threads[i], NULL);
         
-        ft_mutex(&conf->print_mutex, LOCK);
         printf("Port        Service Name (if applicable)       Results         Conclusion\n");
         printf("----------------------------------------------------------------------------------------\n");
+
         for (int i = 0; i < conf->total_ports; i++)
         {
+            service = getservbyport(htons(conf->ports[i].number), "tcp");
+            service_name = service ? service->s_name : "unknown";
             if (conf->ports[i].state == PORT_OPEN)
-                printf("%d/tcp OPEN\n", conf->ports[i].number);
+                printf("%d/tcp      %s                      (Open)                   Open\n", conf->ports[i].number, service_name);
             else if (conf->ports[i].state == PORT_CLOSED)
-                printf("%d/tcp CLOSED\n", conf->ports[i].number);
+                printf("%d/tcp      %s                      (Closed)                 Closed\n", conf->ports[i].number, service_name);
             else if (conf->ports[i].state == PORT_FILTERED)
-                printf("%d/tcp FILTERED\n", conf->ports[i].number);
+                printf("%d/tcp      %s                      (Filtered)               Filtered\n", conf->ports[i].number, service_name);
             else if (conf->ports[i].state == PORT_UNFILTERED)
-                printf("%d/tcp UNFILTERED\n", conf->ports[i].number);
+                printf("%d/tcp      %s                      (Unfiltered)             Unfiltered\n", conf->ports[i].number, service_name);
             else if (conf->ports[i].state == PORT_OPEN_FILTERED)
-                printf("%d/tcp OPEN FILTERED\n", conf->ports[i].number);
+                printf("%d/tcp      %s                      (Open|Filtered)          Open|Filtered\n", conf->ports[i].number, service_name);
             else
-                printf("%d/tcp UNKNOWN\n", conf->ports[i].number);
+                printf("%d-5d/tcp UNKNOWN\n", conf->ports[i].number);
         }
-        ft_mutex(&conf->print_mutex, UNLOCK); 
-
-        ft_mutex(&conf->work_mutex, DESTROY);
-        ft_mutex(&conf->print_mutex,DESTROY);
-        ft_mutex(&conf->recv_mutex, DESTROY);
-        ft_mutex(&conf->send_mutex, DESTROY);
 
         gettimeofday(&end, NULL);
         double total_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
         printf("\nft_nmap done: 1 IP address (1 host up) scanned in %.2f seconds\n", total_time);
     }
+
     cleanup(conf);
-    if (threads != NULL)
-    {
-        free(threads);
-        threads = NULL;
-    }
     return (exit);
 }
