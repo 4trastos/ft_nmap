@@ -17,6 +17,10 @@ int main(int argc, char **argv)
 {
     t_config            *conf = NULL;
     t_thread_context    *threads = NULL;
+    struct timeval      start, end;
+    time_t              rawtime;
+    struct tm           *timeinfo;
+    char                timebuff[80];
     unsigned char       *bytes = 0;
     int                 exit = 0;
 
@@ -48,9 +52,16 @@ int main(int argc, char **argv)
         exit = 1;
     else
     {
+        gettimeofday(&start, NULL);
+        rawtime = start.tv_sec;
+        timeinfo = localtime(&rawtime);
+        strftime(timebuff, sizeof(timebuff), "%Y-%m-%d %H:%M:%S %Z", timeinfo);
+
         bytes = (unsigned char *)&conf->ip_address;
-        printf("Starting Nmap 7.94SVN ( https://nmap.org ) at 2025-12-03 12:08 CET\n");
-        printf("Nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
+        printf("Starting ft_namp 1.0DG ( davgalle ) at %s\n", timebuff);
+        printf("ft_nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
+
+        show_configuration(conf);
 
         threads = malloc(sizeof(t_thread_context) * conf->speedup);
         if (!threads)
@@ -76,22 +87,33 @@ int main(int argc, char **argv)
             pthread_join(conf->threads[i], NULL);
         
         ft_mutex(&conf->print_mutex, LOCK);
-
-        printf("[DEBUG TOTAL_PORTS]:  ( %d ) 01\n", conf->total_ports);
+        printf("Port        Service Name (if applicable)       Results         Conclusion\n");
+        printf("----------------------------------------------------------------------------------------\n");
         for (int i = 0; i < conf->total_ports; i++)
         {
-            printf("[DEBUG]: 02\n");
             if (conf->ports[i].state == PORT_OPEN)
                 printf("%d/tcp OPEN\n", conf->ports[i].number);
+            else if (conf->ports[i].state == PORT_CLOSED)
+                printf("%d/tcp CLOSED\n", conf->ports[i].number);
+            else if (conf->ports[i].state == PORT_FILTERED)
+                printf("%d/tcp FILTERED\n", conf->ports[i].number);
+            else if (conf->ports[i].state == PORT_UNFILTERED)
+                printf("%d/tcp UNFILTERED\n", conf->ports[i].number);
+            else if (conf->ports[i].state == PORT_OPEN_FILTERED)
+                printf("%d/tcp OPEN FILTERED\n", conf->ports[i].number);
+            else
+                printf("%d/tcp UNKNOWN\n", conf->ports[i].number);
         }
-
         ft_mutex(&conf->print_mutex, UNLOCK); 
 
         ft_mutex(&conf->work_mutex, DESTROY);
         ft_mutex(&conf->print_mutex,DESTROY);
         ft_mutex(&conf->recv_mutex, DESTROY);
         ft_mutex(&conf->send_mutex, DESTROY);
-        printf("[DEBUG]: 03\n");
+
+        gettimeofday(&end, NULL);
+        double total_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
+        printf("\nft_nmap done: 1 IP address (1 host up) scanned in %.2f seconds\n", total_time);
     }
     cleanup(conf);
     if (threads != NULL)

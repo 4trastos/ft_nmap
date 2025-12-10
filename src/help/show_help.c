@@ -18,3 +18,57 @@ void    show_help(t_config *conf)
     printf(" --speedup <n>              Number of threads (1 to 250)\n");
     return; 
 }
+
+void        show_configuration(t_config *conf)
+{
+    unsigned char   *bytes = 0;
+    char            scan_str[256] = {0};
+    int             first = 1;
+
+    bytes = (unsigned char *)&conf->ip_address;
+    printf("\nScan Configurations\n");
+    printf("Target IP-Address : %d.%d.%d.%d \n", bytes[0], bytes[1], bytes[2], bytes[3]);
+    printf("No of Ports to scan : %d\n", conf->total_ports);
+    if (conf->scan_type & SCAN_SYN)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "SYN");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_NULL)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "NULL");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_FIN)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "FIN");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_XMAS)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "XMAS");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_ACK)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "ACK");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_UDP)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "UDP");
+        first = 0;
+    }
+    if (scan_str[0] == '\0')
+        strcpy(scan_str, "NONE");
+    
+    printf("Scans to be performed : %s\n", scan_str);
+    printf("No of threads : %d\n", conf->speedup);
+    printf("Scanning..\n\n");
+}

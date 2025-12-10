@@ -177,6 +177,7 @@ int         receive_response(t_thread_context *ctx, int port);
 //*** Show Printouts***/
 
 void        show_help(t_config *conf);
+void        show_configuration(t_config *conf);
 
 //** Signals **/
 

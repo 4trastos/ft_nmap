@@ -110,6 +110,7 @@ int receive_syn_response(t_thread_context *ctx, int port)
 
     if (recv_bytes < 0)
     {
+        //if (errno == EAGAIN || errno == EWOULDBLOCK)
         // TIMEOUT ⇒ FILTRADO
         set_port_state(ctx->conf, port, PORT_FILTERED);
         return (0);
