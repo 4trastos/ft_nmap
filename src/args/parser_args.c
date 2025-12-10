@@ -17,7 +17,7 @@ void    init_struct(t_config *conf, int argc)
     conf->ports = NULL;
     conf->speedup = 1;
     conf->threads = NULL;
-    conf->is_valid = false;
+    conf->is_valid = true;
     conf->sockfd = -1;
     conf->ttl = 64;
     memset(conf->port_bitmap, 0, sizeof(conf->port_bitmap));
@@ -76,6 +76,7 @@ int ft_parser_args(t_config *conf, char **argv)
             {
                 printf("❌ Bad option `%s' (argc %d) \n", argv[i], i);
                 printf("Usage: --ip <IPv4 | hostname> [--ports <ports>] [--speedup <number>] [--scan <type>]\n");
+                conf->is_valid = false;
                 return (-1);
             }
         }

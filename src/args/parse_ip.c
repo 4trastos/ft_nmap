@@ -17,7 +17,10 @@ int dns_resolution(t_config *conf)
     struct addrinfo     *result;
     struct addrinfo     *aux;
     struct sockaddr_in  *ipv4;
-    int             status;
+    int                 status;
+
+    if (conf->is_valid == false)
+        return(-1);
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
