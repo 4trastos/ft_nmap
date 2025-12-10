@@ -15,9 +15,9 @@ void    cleanup(t_config *conf)
 
 int main(int argc, char **argv)
 {
-    t_config            *conf;
-    t_thread_context    *threads;
-    unsigned char       *bytes;
+    t_config            *conf = NULL;
+    t_thread_context    *threads = NULL;
+    unsigned char       *bytes = 0;
     int                 exit = 0;
 
     if (argc == 1)
@@ -35,10 +35,10 @@ int main(int argc, char **argv)
     init_struct(conf, argc);
     if (ft_parser_args(conf, argv) != 0)
         exit = 1;
-    if (conf->show_help && exit == 0)
+    if (conf->show_help)
     {
         show_help(conf);
-        return(0);
+        return (0);
     }
     else if (dns_resolution(conf) != 0)
         exit = 1;
@@ -93,6 +93,9 @@ int main(int argc, char **argv)
     }
     cleanup(conf);
     if (threads != NULL)
+    {
         free(threads);
+        threads = NULL;
+    }
     return (exit);
 }
