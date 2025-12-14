@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     struct servent      *service;
     const char          *service_name;
     char                timebuff[80];
-    unsigned char       *bytes = 0;
+    // unsigned char       *bytes = 0;
     int                 exit = 0;
 
     if (argc == 1)
@@ -39,6 +39,7 @@ int main(int argc, char **argv)
     
     init_signal();
     init_struct(conf, argc);
+    srand(time(NULL));
     if (ft_parser_args(conf, argv) != 0)
         exit = 1;
     if (conf->show_help)
@@ -46,6 +47,7 @@ int main(int argc, char **argv)
         show_help(conf);
         return (0);
     }
+    conf->local_ip = get_local_ip();
     if (set_default_ports(conf) != 0)
         return (1);
     else if (dns_resolution(conf) != 0)
@@ -59,18 +61,26 @@ int main(int argc, char **argv)
         timeinfo = localtime(&rawtime);
         strftime(timebuff, sizeof(timebuff), "%Y-%m-%d %H:%M:%S %Z", timeinfo);
 
-        bytes = (unsigned char *)&conf->ip_address;
-        printf("Starting ft_namp 1.0DG ( davgalle ) at %s\n", timebuff);
-        printf("ft_nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
+        // bytes = (unsigned char *)&conf->ip_address;
+        // printf("Starting ft_namp 1.0DG ( davgalle ) at %s\n", timebuff);
+        // printf("ft_nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
 
         show_configuration(conf);
 
-        conf->speedup = 1;
+        ft_mutex(&conf->work_mutex, INIT);
+        ft_mutex(&conf->print_mutex, INIT);
+        ft_mutex(&conf->recv_mutex, INIT);
+        ft_mutex(&conf->send_mutex, INIT);
+
         if (conf->speedup == 0)
         {
             if (sequential_scan(conf) != 0)
             {
                 cleanup(conf);
+                ft_mutex(&conf->work_mutex, DESTROY);
+                ft_mutex(&conf->print_mutex,DESTROY);
+                ft_mutex(&conf->recv_mutex, DESTROY);
+                ft_mutex(&conf->send_mutex, DESTROY);
                 return (1);
             }
         }
@@ -90,41 +100,35 @@ int main(int argc, char **argv)
                 return (1);
             }
     
-            ft_mutex(&conf->work_mutex, INIT);
-            ft_mutex(&conf->print_mutex, INIT);
-            ft_mutex(&conf->recv_mutex, INIT);
-            ft_mutex(&conf->send_mutex, INIT);
-    
             threads_creation(conf, threads);
             for (int i = 0; i < conf->speedup; i++)
                 pthread_join(conf->threads[i], NULL);
 
-            ft_mutex(&conf->work_mutex, DESTROY);
-            ft_mutex(&conf->print_mutex,DESTROY);
-            ft_mutex(&conf->recv_mutex, DESTROY);
-            ft_mutex(&conf->send_mutex, DESTROY);
-
             free(threads);
             threads = NULL;
         }
+        ft_mutex(&conf->work_mutex, DESTROY);
+        ft_mutex(&conf->print_mutex,DESTROY);
+        ft_mutex(&conf->recv_mutex, DESTROY);
+        ft_mutex(&conf->send_mutex, DESTROY);
         
-        printf("Port        Service Name (if applicable)       Results         Conclusion\n");
-        printf("----------------------------------------------------------------------------------------\n");
+        printf("Port        Service Name (if applicable)       Results                 Conclusion\n");
+        printf("-------------------------------------------------------------------------------------------------\n");
 
         for (int i = 0; i < conf->total_ports; i++)
         {
             service = getservbyport(htons(conf->ports[i].number), "tcp");
             service_name = service ? service->s_name : "unknown";
             if (conf->ports[i].state == PORT_OPEN)
-                printf("%d/tcp      %s                      (Open)                   Open\n", conf->ports[i].number, service_name);
+                printf("%d/tcp      %s                              %s(Open)                 Open\n", conf->ports[i].number, service_name, show_scantype(conf));
             else if (conf->ports[i].state == PORT_CLOSED)
-                printf("%d/tcp      %s                      (Closed)                 Closed\n", conf->ports[i].number, service_name);
+                printf("%d/tcp      %s                              %s(Closed)               Closed\n", conf->ports[i].number, service_name, show_scantype(conf));
             else if (conf->ports[i].state == PORT_FILTERED)
-                printf("%d/tcp      %s                      (Filtered)               Filtered\n", conf->ports[i].number, service_name);
+                printf("%d/tcp      %s                              %s(Filtered)             Filtered\n", conf->ports[i].number, service_name, show_scantype(conf));
             else if (conf->ports[i].state == PORT_UNFILTERED)
-                printf("%d/tcp      %s                      (Unfiltered)             Unfiltered\n", conf->ports[i].number, service_name);
+                printf("%d/tcp      %s                              %s(Unfiltered)           Unfiltered\n", conf->ports[i].number, service_name, show_scantype(conf));
             else if (conf->ports[i].state == PORT_OPEN_FILTERED)
-                printf("%d/tcp      %s                      (Open|Filtered)          Open|Filtered\n", conf->ports[i].number, service_name);
+                printf("%d/tcp      %s                              %s(Open|Filtered)        Open|Filtered\n", conf->ports[i].number, service_name, show_scantype(conf));
             else
                 printf("%d-5d/tcp UNKNOWN\n", conf->ports[i].number);
         }

@@ -15,7 +15,10 @@ int set_default_ports(t_config *conf)
     
         conf->ports = malloc(sizeof(t_port) * conf->total_ports);
         if (!conf->ports)
+        {
+            cleanup(conf);
             return (-1);
+        }
         
         for (int i = 0; i < conf->total_ports; i++)
         {

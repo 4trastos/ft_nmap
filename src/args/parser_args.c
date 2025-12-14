@@ -20,6 +20,8 @@ void    init_struct(t_config *conf, int argc)
     conf->is_valid = true;
     conf->sockfd = -1;
     conf->ttl = 64;
+    conf->pcap_handle = NULL;
+    conf->pcap_datalink = 0;
     memset(conf->port_bitmap, 0, sizeof(conf->port_bitmap));
 }
 

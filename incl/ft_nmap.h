@@ -23,7 +23,7 @@
 # include <netinet/udp.h>
 # include <netinet/tcp.h>
 # include <arpa/inet.h>
-# include <pcap/pcap.h> 
+# include <pcap.h> 
 
 
 # define    MAX_PACKET_SIZE 1500
@@ -123,28 +123,32 @@ typedef struct s_config
     /* Runtime */
     bool                    is_valid;
     int                     sockfd;
+    pcap_t                  *pcap_handle;
+    int                     pcap_datalink;
+    uint32_t                local_ip;
 }   t_config;
 
 typedef struct s_thread_context
 {
-    int                 thread_id;
-    int                 *next_port_idx;     // Índice global del puerto
-    t_mutex             *work_mutex;        // Proteger next_port_idx
-    t_mutex             *print_mutex;       // Imprimir limpio
+    int                     thread_id;
+    int                     *next_port_idx;     // Índice global del puerto
+    t_mutex                 *work_mutex;        // Proteger next_port_idx
+    t_mutex                 *print_mutex;       // Imprimir limpio
 
     /* Socket RAW compartido */
-    t_mutex             *send_mutex;        // Proteger sendto()
-    t_mutex             *recv_mutex;        // Proteger recvfrom()
+    t_mutex                 *send_mutex;        // Proteger sendto()
+    t_mutex                 *recv_mutex;        // Proteger recvfrom()
 
     /* Buffers propios por hilo */
-    unsigned char       sendbuffer[MAX_PACKET_SIZE];
-    unsigned char       recvbuffer[MAX_PACKET_SIZE];
+    unsigned char           sendbuffer[MAX_PACKET_SIZE];
+    unsigned char           recvbuffer[MAX_PACKET_SIZE];
 
     /* Destino */
-    struct sockaddr_in  target_addr;
-    struct ping_packet  packets[MAX_PACKET_SIZE];
+    struct sockaddr_in      target_addr;
+    struct ping_packet      packets[MAX_PACKET_SIZE];
 
-    t_config           *conf;
+    t_config                *conf;
+    uint32_t                last_seq_sent;
 }   t_thread_context;
 
 //*** Init Functions ***/
@@ -163,7 +167,7 @@ int         validate_range(const char *token, int *start, int *end);
 int         parse_speedup(t_config *conf, char **argv, int i);
 int         parse_scantypes(t_config *conf, char **argv, int i);
 char        **split_scan(char *str, char c);
-uint32_t    get_local_ip(int sockfd);
+uint32_t    get_local_ip(void);
 
 /*** Socket & DNS ***/
 
@@ -178,6 +182,7 @@ int         receive_response(t_thread_context *ctx, int port);
 
 void        show_help(t_config *conf);
 void        show_configuration(t_config *conf);
+char        *show_scantype(t_config *conf);
 
 //** Signals **/
 
@@ -222,5 +227,6 @@ int         syn_packet_build(t_thread_context *ctx, int port);
 int         syn_packet_build(t_thread_context *ctx, int port);
 int         send_syn_packet(t_thread_context *ctx, int port);
 int         receive_syn_response(t_thread_context *ctx, int port);
+int         offset_calcualte(t_thread_context *ctx);
 
 #endif 

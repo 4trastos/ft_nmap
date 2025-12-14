@@ -1,13 +1,28 @@
 #include "ft_nmap.h"
 
-uint32_t    get_local_ip(int sockfd)
+uint32_t    get_local_ip(void)
 {
-    struct sockaddr_in local;
-    socklen_t   len = sizeof(local);
+    struct sockaddr_in  dst, local;
+    int                 sock;
+    socklen_t           len = sizeof(local);
 
-    memset(&local, 0, sizeof(local));
-    if (getsockname(sockfd, (struct sockaddr *)&local, &len) == -1)
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock == -1)
         return (0);
+    
+    memset(&local, 0, sizeof(local));
+    dst.sin_family = AF_INET;
+    dst.sin_port = htons(53);
+    inet_pton(AF_INET, "8.8.8.8", &dst.sin_addr);
+
+    if (connect(sock, (struct sockaddr *)&dst, sizeof(dst)) == -1)
+    {
+        close(sock);
+        return (-1);
+    }
+    getsockname(sock, (struct sockaddr *)&local, &len);
+    close(sock);
+
     return (local.sin_addr.s_addr);
 }
 

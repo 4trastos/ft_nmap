@@ -74,3 +74,51 @@ void        show_configuration(t_config *conf)
     printf("No of threads : %d\n", conf->speedup);
     printf("Scanning..\n\n");
 }
+
+char    *show_scantype(t_config *conf)
+{
+    char            scan_str[256] = {0};
+    int             first = 1;
+    char            *aux = NULL;
+
+    if (conf->scan_type & SCAN_SYN)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "SYN");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_NULL)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "NULL");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_FIN)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "FIN");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_XMAS)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "XMAS");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_ACK)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "ACK");
+        first = 0;
+    }
+    if (conf->scan_type & SCAN_UDP)
+    {
+        if (!first) strcat(scan_str, ", ");
+        strcat(scan_str, "UDP");
+        first = 0;
+    }
+    if (scan_str[0] == '\0')
+        strcpy(scan_str, "NONE");
+    aux = scan_str;
+    return (aux);
+}
