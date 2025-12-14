@@ -55,7 +55,8 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     // ================= TCP HEADER =================
 
-    tcp->source     = htons(40000 + ctx->probe_id);
+    tcp->source     = htons(40000 + ctx->thread_id);
+    //tcp->source     = htons(40000 + ctx->probe_id);
     tcp->dest       = htons(port);
     tcp->seq        = htonl(rand());
     tcp->ack_seq    = 0;
