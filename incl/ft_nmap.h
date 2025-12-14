@@ -131,22 +131,16 @@ typedef struct s_config
 typedef struct s_thread_context
 {
     int                     thread_id;
-    int                     *next_port_idx;     // Índice global del puerto
-    t_mutex                 *work_mutex;        // Proteger next_port_idx
-    t_mutex                 *print_mutex;       // Imprimir limpio
-
-    /* Socket RAW compartido */
-    t_mutex                 *send_mutex;        // Proteger sendto()
-    t_mutex                 *recv_mutex;        // Proteger recvfrom()
-
-    /* Buffers propios por hilo */
+    int                     probe_id;
+    int                     *next_port_idx;
+    t_mutex                 *work_mutex; 
+    t_mutex                 *print_mutex; 
+    t_mutex                 *send_mutex; 
+    t_mutex                 *recv_mutex; 
     unsigned char           sendbuffer[MAX_PACKET_SIZE];
     unsigned char           recvbuffer[MAX_PACKET_SIZE];
-
-    /* Destino */
     struct sockaddr_in      target_addr;
     struct ping_packet      packets[MAX_PACKET_SIZE];
-
     t_config                *conf;
     uint32_t                last_seq_sent;
 }   t_thread_context;
