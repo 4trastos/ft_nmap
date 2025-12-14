@@ -19,6 +19,7 @@ void	*thread_routine(void *data)
             break;
         }
         idx = (*(ctx->next_port_idx))++;
+        ctx->probe_id = idx;  
         ft_mutex(ctx->work_mutex, UNLOCK);
 
         port = conf->ports[idx].number;

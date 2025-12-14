@@ -55,7 +55,7 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     // ================= TCP HEADER =================
 
-    tcp->source     = htons(40000 + ctx->thread_id);
+    tcp->source     = htons(40000 + ctx->probe_id);
     tcp->dest       = htons(port);
     tcp->seq        = htonl(rand());
     tcp->ack_seq    = 0;
@@ -92,10 +92,7 @@ int send_syn_packet(t_thread_context *ctx, int port)
     ctx->target_addr.sin_addr = ctx->conf->ip_address;
 
     ft_mutex(ctx->send_mutex, LOCK);
-
-    sent_bytes = sendto(ctx->conf->sockfd, ctx->sendbuffer,
-        sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&ctx->target_addr, sizeof(ctx->target_addr));
-
+    sent_bytes = sendto(ctx->conf->sockfd, ctx->sendbuffer, sizeof(struct iphdr) + sizeof(struct tcphdr), 0, (struct sockaddr *)&ctx->target_addr, sizeof(ctx->target_addr));
     ft_mutex(ctx->send_mutex, UNLOCK);
 
     if (sent_bytes < 0)
