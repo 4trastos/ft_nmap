@@ -1,8 +1,8 @@
 #include "ft_nmap.h"
 
-void    show_help(t_config *conf)
+void    show_help(t_config *conf, t_thread_context *threads)
 {
-    cleanup(conf);
+    cleanup(conf, threads);
     
     printf("ft_nmap - Help\nUsage:\n");
     printf("  ft_nmap [OPTIONS] --ip <address>\n");

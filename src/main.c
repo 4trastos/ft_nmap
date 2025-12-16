@@ -1,11 +1,21 @@
 #include "ft_nmap.h"
 
 volatile sig_atomic_t   g_stop = 0;
+t_packet_queue g_packet_queue = {0};
 
-void    cleanup(t_config *conf)
+void    cleanup(t_config *conf, t_thread_context *threads)
 {
-    if (!conf)
+    if (!conf || !threads)
         return;
+    for (int i = 0; i < conf->speedup; i++)
+    {
+        if (threads[i].pcap_handle)
+        {
+            pcap_close(threads[i].pcap_handle);
+            threads[i].pcap_handle = NULL;
+        }
+    }
+    
     if (conf->ports != NULL)
         free(conf->ports);
     if (conf->threads != NULL)
@@ -17,13 +27,13 @@ int main(int argc, char **argv)
 {
     t_config            *conf = NULL;
     t_thread_context    *threads = NULL;
+    pthread_t           packet_reader;
     struct timeval      start, end;
     time_t              rawtime;
     struct tm           *timeinfo;
     struct servent      *service;
     const char          *service_name;
     char                timebuff[80];
-    // unsigned char       *bytes = 0;
     int                 exit = 0;
 
     if (argc == 1)
@@ -44,11 +54,11 @@ int main(int argc, char **argv)
         exit = 1;
     if (conf->show_help)
     {
-        show_help(conf);
+        show_help(conf, threads);
         return (0);
     }
     conf->local_ip = get_local_ip();
-    if (set_default_ports(conf) != 0)
+    if (set_default_ports(conf, threads) != 0)
         return (1);
     else if (dns_resolution(conf) != 0)
         exit = 1;
@@ -61,10 +71,6 @@ int main(int argc, char **argv)
         timeinfo = localtime(&rawtime);
         strftime(timebuff, sizeof(timebuff), "%Y-%m-%d %H:%M:%S %Z", timeinfo);
 
-        // bytes = (unsigned char *)&conf->ip_address;
-        // printf("Starting ft_namp 1.0DG ( davgalle ) at %s\n", timebuff);
-        // printf("ft_nmap scan report for %s (%d.%d.%d.%d)\n", conf->hostname, bytes[0], bytes[1], bytes[2], bytes[3]);
-
         show_configuration(conf);
 
         ft_mutex(&conf->work_mutex, INIT);
@@ -72,11 +78,14 @@ int main(int argc, char **argv)
         ft_mutex(&conf->recv_mutex, INIT);
         ft_mutex(&conf->send_mutex, INIT);
 
+        if (pthread_create(&packet_reader, NULL, packet_reader_thread, conf) != 0)
+            exit = 1;
+
         if (conf->speedup == 0)
         {
             if (sequential_scan(conf) != 0)
             {
-                cleanup(conf);
+                cleanup(conf, threads);
                 ft_mutex(&conf->work_mutex, DESTROY);
                 ft_mutex(&conf->print_mutex,DESTROY);
                 ft_mutex(&conf->recv_mutex, DESTROY);
@@ -95,7 +104,7 @@ int main(int argc, char **argv)
             conf->threads = malloc(sizeof(pthread_t) * conf->speedup);
             if (!conf->threads)
             {
-                cleanup(conf);
+                cleanup(conf, threads);
                 free(threads);
                 return (1);
             }
@@ -104,6 +113,8 @@ int main(int argc, char **argv)
             for (int i = 0; i < conf->speedup; i++)
                 pthread_join(conf->threads[i], NULL);
 
+            g_stop = 1;
+            pthread_join(packet_reader, NULL);
             free(threads);
             threads = NULL;
         }
@@ -138,6 +149,6 @@ int main(int argc, char **argv)
         printf("\nft_nmap done: 1 IP address (1 host up) scanned in %.2f seconds\n", total_time);
     }
 
-    cleanup(conf);
+    cleanup(conf, threads);
     return (exit);
 }

@@ -1,10 +1,10 @@
 #include "ft_nmap.h"
 
-int set_default_ports(t_config *conf)
+int set_default_ports(t_config *conf, t_thread_context *threads)
 {
     if (conf->is_valid == false)
     {
-        cleanup(conf);
+        cleanup(conf, threads);
         return(-1);
     }
     if (conf->ports == 0)
@@ -16,7 +16,7 @@ int set_default_ports(t_config *conf)
         conf->ports = malloc(sizeof(t_port) * conf->total_ports);
         if (!conf->ports)
         {
-            cleanup(conf);
+            cleanup(conf, threads);
             return (-1);
         }
         

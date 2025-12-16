@@ -33,6 +33,23 @@ extern volatile sig_atomic_t   g_stop;
 
 typedef pthread_mutex_t t_mutex;
 
+typedef struct s_packet_node
+{
+    const u_char            *packet;
+    struct pcap_pkthdr      header;
+    struct s_packet_node    *next;
+} t_packet_node;
+
+typedef struct s_packet_queue
+{
+    t_packet_node   *head;
+    t_packet_node   *tail;
+    pthread_mutex_t mutex;
+    pthread_cond_t  cond;
+} t_packet_queue;
+
+extern t_packet_queue g_packet_queue;
+
 struct pseudo_header
 {
     uint32_t    src_addr;
@@ -126,12 +143,12 @@ typedef struct s_config
     pcap_t                  *pcap_handle;
     int                     pcap_datalink;
     uint32_t                local_ip;
+    char                    interface[16];
 }   t_config;
 
 typedef struct s_thread_context
 {
     int                     thread_id;
-    int                     probe_id;
     int                     *next_port_idx;
     t_mutex                 *work_mutex; 
     t_mutex                 *print_mutex; 
@@ -143,12 +160,13 @@ typedef struct s_thread_context
     struct ping_packet      packets[MAX_PACKET_SIZE];
     t_config                *conf;
     uint32_t                last_seq_sent;
+    pcap_t                  *pcap_handle;
 }   t_thread_context;
 
 //*** Init Functions ***/
 
 int         main(int argc, char **argv);
-void        cleanup(t_config *conf);
+void        cleanup(t_config *conf, t_thread_context *threads);
 
 //*** Parser ***/
 
@@ -171,10 +189,14 @@ int         icmp_creation(t_thread_context *ctx, int port);
 uint16_t    calculate_checksum(void *packet, size_t len);
 int         send_socket(t_thread_context *ctx, int port, int idx);
 int         receive_response(t_thread_context *ctx, int port);
+int         process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port);
+void        set_port_state(t_config *conf, int port, t_port_state state);
+int         get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header);
+void        *packet_reader_thread(void *arg);
 
 //*** Show Printouts***/
 
-void        show_help(t_config *conf);
+void        show_help(t_config *conf, t_thread_context *threads);
 void        show_configuration(t_config *conf);
 char        *show_scantype(t_config *conf);
 
@@ -213,7 +235,7 @@ int         xmas_scan(t_thread_context *ctx, int port);
 int         ack_scan(t_thread_context *ctx, int port);
 int         udp_scan(t_thread_context *ctx, int port);
 void        set_port_state(t_config *conf, int port, t_port_state state);
-int         set_default_ports(t_config *conf);
+int         set_default_ports(t_config *conf, t_thread_context *threads);
 
 /*** SYN SCAN ***/
 

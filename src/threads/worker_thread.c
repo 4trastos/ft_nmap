@@ -19,10 +19,12 @@ void	*thread_routine(void *data)
             break;
         }
         idx = (*(ctx->next_port_idx))++;
-        ctx->probe_id = idx;  
         ft_mutex(ctx->work_mutex, UNLOCK);
 
         port = conf->ports[idx].number;
+
+        printf("[DEBUG Thread %d] Scanning port %d from source port %d\n", ctx->thread_id, port, 40000 + ctx->thread_id);
+
         if (scan_port(ctx, port) != 0)
             g_stop = 1;
 
@@ -37,7 +39,12 @@ void	*thread_routine(void *data)
 
 void    threads_creation(t_config *conf, t_thread_context *ctx_array)
 {
-    for (int i = 0; i < conf->speedup; i++)
+    struct bpf_program  fp;
+    char                errbuf[PCAP_ERRBUF_SIZE];
+    char                filter[100];
+    int                 source_port;
+
+    for (int i = 0; i < conf->speedup && !g_stop; i++)
     {
         ctx_array[i].thread_id = i;
         ctx_array[i].conf = conf;
@@ -46,6 +53,27 @@ void    threads_creation(t_config *conf, t_thread_context *ctx_array)
         ctx_array[i].print_mutex = &conf->print_mutex;
         ctx_array[i].recv_mutex = &conf->recv_mutex;
         ctx_array[i].next_port_idx = &conf->next_port_idx;
+
+        // Cada hilo obtiene su propio handler pcap
+        ctx_array[i].pcap_handle = pcap_open_live(conf->interface, BUFSIZ, 1, 100, errbuf);
+        if (!ctx_array[i].pcap_handle)
+        {
+            printf("Error abriendo pcap para hilo %d: %s\n", i, errbuf);
+            g_stop = 1;
+            continue;
+        }
+
+        source_port = 40000 + i;
+        snprintf(filter, sizeof(filter), "src host %s and (tcp dst port %d or (icmp and icmp[0] == 3))", inet_ntoa(conf->ip_address), source_port);
+
+        printf("[DEBUG] Thread %d filter: %s\n", i, filter);
+
+         if (pcap_compile(ctx_array[i].pcap_handle, &fp, filter, 0, PCAP_NETMASK_UNKNOWN) == -1 || pcap_setfilter(ctx_array[i].pcap_handle, &fp) == -1)
+         {
+            printf("Error configurando filtro para hilo %d\n", i);
+            g_stop = 1;
+        }
+        pcap_freecode(&fp);
 
         if (pthread_create(&conf->threads[i], NULL, thread_routine, &ctx_array[i]) != 0)
             g_stop = 1;

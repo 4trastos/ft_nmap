@@ -6,8 +6,8 @@ int         sequential_scan(t_config *conf)
     int                 result;
     int                 idx;
     int                 port;
-    //struct timeval      start, end;
-    //double              total_time;
+
+    memset(&ctx, 0, sizeof(t_thread_context));
 
     ctx.thread_id = 0;
     ctx.conf = conf;
@@ -16,9 +16,7 @@ int         sequential_scan(t_config *conf)
     ctx.print_mutex = &conf->print_mutex;
     ctx.recv_mutex = &conf->recv_mutex;
     ctx.next_port_idx = &conf->next_port_idx;
-    
-    memset(ctx.sendbuffer, 0, MAX_PACKET_SIZE);
-    memset(ctx.recvbuffer, 0, MAX_PACKET_SIZE);
+    ctx.pcap_handle = conf->pcap_handle;
 
     memset(&ctx.target_addr, 0, sizeof(ctx.target_addr));
     ctx.target_addr.sin_family = AF_INET;
@@ -31,18 +29,19 @@ int         sequential_scan(t_config *conf)
         idx = conf->next_port_idx++;
         port = conf->ports[idx].number;
 
-        //gettimeofday(&start, NULL);
+        memset(ctx.sendbuffer, 0, MAX_PACKET_SIZE);
+        memset(ctx.recvbuffer, 0, MAX_PACKET_SIZE);
+
+        printf("[DEBUG Sequential] Scanning port %d from source port %d\n", port, 40000 + ctx.thread_id);
+
         result = scan_port(&ctx, port);
-        //gettimeofday(&end, NULL);
-        
-        //total_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
-        //printf("[Sequential] Port %d scanned in %.3f seconds\n", port, total_time);
 
         if (result != 0)
         {
             printf("Error escaneando puerto %d\n", port);
             return (-1);
         }
+        usleep(100000); 
     }
     
     return (0);

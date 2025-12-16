@@ -1,5 +1,55 @@
 #include "ft_nmap.h"
 
+int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port)
+{
+    (void)header;
+    struct iphdr    *ip;
+    struct tcphdr   *tcp;
+    struct icmphdr  *icmp;
+    int             link_offset;
+
+    link_offset = offset_calcualte(ctx);
+    if (link_offset < 0)
+        return (-1);
+
+    ip = (struct iphdr *)(packet + link_offset);
+
+    /* ================= TCP ================= */
+    if (ip->protocol == IPPROTO_TCP)
+    {
+        tcp = (struct tcphdr *)((u_char *)ip + (ip->ihl * 4));
+
+        /* RST → CLOSED */
+        if (tcp->rst)
+        {
+            set_port_state(ctx->conf, port, PORT_CLOSED);
+            return (0);
+        }
+        
+        /* SYN + ACK → OPEN */
+        if (tcp->syn && tcp->ack)
+        {
+            set_port_state(ctx->conf, port, PORT_OPEN);
+            return (0);
+        }
+    }
+
+    /* ================= ICMP ================= */
+    if (ip->protocol == IPPROTO_ICMP)
+    {
+        icmp = (struct icmphdr *)((u_char *)ip + (ip->ihl * 4));
+
+        /* Destination unreachable → FILTERED */
+        if (icmp->type == ICMP_DEST_UNREACH)
+        {
+            set_port_state(ctx->conf, port, PORT_FILTERED);
+            return (0);
+        }
+    }
+
+    return (0);  // Paquete no reconocido
+}
+
 int offset_calcualte(t_thread_context *ctx)
 {
     int offset = -1;
@@ -55,8 +105,9 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     // ================= TCP HEADER =================
 
-    tcp->source     = htons(40000 + ctx->thread_id);
-    //tcp->source     = htons(40000 + ctx->probe_id);
+    // ¡IMPORTANTE! Usar thread_id, NO probe_id
+    int source_port = 40000 + ctx->thread_id;
+    tcp->source     = htons(source_port);
     tcp->dest       = htons(port);
     tcp->seq        = htonl(rand());
     tcp->ack_seq    = 0;
@@ -79,6 +130,9 @@ int syn_packet_build(t_thread_context *ctx, int port)
     memcpy(pseudo_packet + sizeof(psh), tcp, sizeof(struct tcphdr));
 
     tcp->check = calculate_checksum(pseudo_packet, sizeof(psh) + sizeof(struct tcphdr));
+
+    // ¡GUARDAR EL NÚMERO DE SECUENCIA ENVIADO!
+    ctx->last_seq_sent = ntohl(tcp->seq);
 
     return (0);
 }
@@ -108,22 +162,10 @@ int send_syn_packet(t_thread_context *ctx, int port)
 int receive_syn_response(t_thread_context *ctx, int port)
 {
     struct pcap_pkthdr  *header;
-    struct iphdr        *ip;
-    struct tcphdr       *tcp;
-    struct icmphdr      *icmp;
     const u_char        *packet;
-    int                 returned;
+    //int                 returned;
     struct timeval      start, now;
     double              time_elapsed;
-    int                 link_offset;
-
-    link_offset = offset_calcualte(ctx);
-    if (link_offset < 0)
-        return (-1);
-    
-    // printf("\n[DEBUG] ===== Waiting for response on port %d =====\n", port);
-    // printf("[DEBUG] Source port: %d\n", 40000 + ctx->thread_id);
-    // printf("[DEBUG] Target IP: %s (0x%08x)\n", inet_ntoa(ctx->conf->ip_address), ctx->conf->ip_address.s_addr);
     
     gettimeofday(&start, NULL);
     
@@ -132,122 +174,43 @@ int receive_syn_response(t_thread_context *ctx, int port)
         gettimeofday(&now, NULL);
         time_elapsed = (double)(now.tv_sec - start.tv_sec) + (double)(now.tv_usec - start.tv_usec) / 1000000.0;
         
-        if (time_elapsed >= 1.5)  // Timeout de 1 segundo
+        if (time_elapsed >= 2.0)
         {
-            //printf("[DEBUG] TIMEOUT for port %d\n", port);
+            printf("[DEBUG Thread %d] TIMEOUT for port %d\n", ctx->thread_id, port);
             set_port_state(ctx->conf, port, PORT_FILTERED);
             return (0);
         }
         
-        // Leer paquete
-        
-        ft_mutex(ctx->recv_mutex, LOCK);
-        
+        if (get_packet_for_thread(ctx, &packet, &header))
+        {
+            process_syn_packet(ctx, packet, header, port);
+            free((void*)packet);
+            return 0;
+        }
+
+        /* ft_mutex(ctx->recv_mutex, LOCK);
         returned = pcap_next_ex(ctx->conf->pcap_handle, &header, &packet);
-        
         ft_mutex(ctx->recv_mutex, UNLOCK);
-        
-        if (returned == 0)
+
+        if (returned == 1)
         {
-            // No hay paquete
-            usleep(10000);  // 10ms
+            if (packet_is_for_me(ctx, packet, header))
+            {
+                ft_mutex(ctx->recv_mutex, LOCK);
+                process_syn_packet(ctx, packet, header, port);
+                ft_mutex(ctx->recv_mutex, UNLOCK);
+                return (0);
+            }
+        }
+        else if (returned == 0)  // Timeout
+        {
+            usleep(10000);
             continue;
-        }
-        else if (returned == -1)
-        {
-            //printf("[ERROR] pcap_next_ex: %s\n", pcap_geterr(ctx->conf->pcap_handle));
-            break;
-        }
-        else if (returned == 1)
-        {
-            //printf("[DEBUG] Received packet: %d bytes\n", header->len);
-            
-            // Verificar tamaño mínimo
-            if (header->len < link_offset + sizeof(struct iphdr))
-            {
-                printf("[DEBUG] Packet too small, skipping\n");
-                continue;
-            }
-            
-            // Saltar header de enlace
-            ip = (struct iphdr *)(packet + link_offset);
-            
-            // Imprimir IP en formato legible
-            // struct in_addr src_ip, dst_ip;
-            // src_ip.s_addr = ip->saddr;
-            // dst_ip.s_addr = ip->daddr;
-            
-            // printf("[DEBUG] From: %s, To: %s\n", inet_ntoa(src_ip), inet_ntoa(dst_ip));
-            // printf("[DEBUG] Expected from: %s\n", inet_ntoa(ctx->conf->ip_address));
-            
-            // Verificar IP de origen
-            if (ip->saddr != ctx->conf->ip_address.s_addr)
-            {
-                //printf("[DEBUG] Not from target! Skipping...\n");
-                continue;
-            }
-            
-            //printf("[DEBUG] ¡CORRECT SOURCE IP! Processing...\n");
-            
-            // Procesar TCP
-            if (ip->protocol == IPPROTO_TCP)
-            {
-                if (header->len < link_offset + (ip->ihl * 4) + sizeof(struct tcphdr))
-                {
-                    //printf("[DEBUG] TCP packet too small\n");
-                    continue;
-                }
-                
-                tcp = (struct tcphdr *)((u_char *)ip + (ip->ihl * 4));
-                
-                //int src_port = ntohs(tcp->source);
-                int dst_port = ntohs(tcp->dest);
-                
-                // printf("[DEBUG] TCP ports: %d -> %d\n", src_port, dst_port);
-                // printf("[DEBUG] Expected dest port: %d\n", 40000 + ctx->thread_id);
-                // printf("[DEBUG] Flags: SYN=%d, ACK=%d, RST=%d\n", tcp->syn, tcp->ack, tcp->rst);
-                
-                // Verificar que sea para nuestro puerto
-                if (dst_port == (40000 + ctx->thread_id))
-                {
-                    if (tcp->syn && tcp->ack)
-                    {
-                        //printf("[DEBUG] ¡¡¡PORT %d OPEN!!!\n", port);
-                        set_port_state(ctx->conf, port, PORT_OPEN);
-                        return (0);
-                    }
-                    else if (tcp->rst)
-                    {
-                        //printf("[DEBUG] Port %d CLOSED\n", port);
-                        set_port_state(ctx->conf, port, PORT_CLOSED);
-                        return (0);
-                    }
-                }
-            }
-            // Procesar ICMP
-            else if (ip->protocol == IPPROTO_ICMP)
-            {
-                if (header->len < link_offset + (ip->ihl * 4) + sizeof(struct icmphdr))
-                {
-                    //printf("[DEBUG] ICMP packet too small\n");
-                    continue;
-                }
-                
-                icmp = (struct icmphdr *)((u_char *)ip + (ip->ihl * 4));
-                
-                //printf("[DEBUG] ICMP type: %d, code: %d\n", icmp->type, icmp->code);
-                
-                if (icmp->type == ICMP_DEST_UNREACH)
-                {
-                    //printf("[DEBUG] Port %d FILTERED (ICMP)\n", port);
-                    set_port_state(ctx->conf, port, PORT_FILTERED);
-                    return (0);
-                }
-            }
-        }
+        } */
+
     }
     
-    //printf("[DEBUG] No valid response for port %d\n", port);
+    printf("[DEBUG Thread %d] No response for port %d\n", ctx->thread_id, port);
     set_port_state(ctx->conf, port, PORT_FILTERED);
     return (0);
 }

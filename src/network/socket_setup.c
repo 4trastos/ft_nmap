@@ -6,6 +6,62 @@
 //    0001 = id(1)
 //    0001 = sequence(1)
 
+int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header)
+{
+    pthread_mutex_lock(&g_packet_queue.mutex);
+    t_packet_node   *prev = NULL;
+    t_packet_node   *current = g_packet_queue.head;
+    struct iphdr    *ip;
+    struct tcphdr   *tcp;
+
+    while (current && !g_stop)
+    {
+        ip = (struct iphdr *)(current->packet + offset_calcualte(ctx));
+        if (ip->protocol == IPPROTO_TCP)
+        {
+            tcp = (struct tcphdr *)((u_char *)ip + (ip->ihl * 4));
+            if (ntohs(tcp->dest) == 40000 + ctx->thread_id)
+            {
+                // Lo sacamos de la cola
+                if (prev)
+                    prev->next = current->next;
+                else
+                    g_packet_queue.head = current->next;
+                if (current == g_packet_queue.tail)
+                    g_packet_queue.tail = prev;
+
+                *packet = current->packet;
+                *header = &current->header;
+                free(current);
+                pthread_mutex_unlock(&g_packet_queue.mutex);
+                return (1);
+            }
+        }
+        if (ip->protocol == IPPROTO_ICMP)
+        {
+            if (prev)
+                prev->next = current->next;
+            else
+                g_packet_queue.head = current->next;
+            if (current == g_packet_queue.tail)
+                    g_packet_queue.tail = prev;
+            
+            *packet = current->packet;
+            *header = &current->header;
+            free(current);
+            pthread_mutex_unlock(&g_packet_queue.mutex);
+            return (1);
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    // No hay paquete para este thread
+    pthread_cond_wait(&g_packet_queue.cond, &g_packet_queue.mutex);
+    pthread_mutex_unlock(&g_packet_queue.mutex);
+    return (0);
+}
+
 uint16_t    calculate_checksum(void *packet, size_t len)
 {
     uint32_t    sum = 0;
@@ -20,7 +76,67 @@ uint16_t    calculate_checksum(void *packet, size_t len)
     return (~sum); 
 }
 
-int     icmp_creation(t_thread_context *ctx, int port)
+int socket_creation(t_config *conf)
+{
+    int one = 1;
+    int timeout_ms = 10;
+    char errorbuf[PCAP_ERRBUF_SIZE];
+    char filter_exp[256];
+    struct bpf_program fp;
+    char ip_str[INET_ADDRSTRLEN];
+    const char *dev = "any";
+
+    /* ===== RAW SOCKET (SEND) ===== */
+    conf->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+    if (conf->sockfd == -1)
+    {
+        perror("ft_nmap: socket");
+        return (-1);
+    }
+
+    if (setsockopt(conf->sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one)) == -1)
+    {
+        perror("ft_nmap: setsockopt IP_HDRINCL");
+        close(conf->sockfd);
+        return (-1);
+    }
+
+    /* ===== PCAP (RECEIVE – ONLY READER THREAD) ===== */
+    conf->pcap_handle = pcap_open_live(dev, BUFSIZ, 1, timeout_ms, errorbuf);
+    if (!conf->pcap_handle)
+    {
+        fprintf(stderr, "pcap_open_live: %s\n", errorbuf);
+        close(conf->sockfd);
+        return (-1);
+    }
+
+    conf->pcap_datalink = pcap_datalink(conf->pcap_handle);
+
+    inet_ntop(AF_INET, &conf->ip_address, ip_str, sizeof(ip_str));
+    snprintf(filter_exp, sizeof(filter_exp), "(ip proto 6 or ip proto 1) and src host %s", ip_str);
+
+    if (pcap_compile(conf->pcap_handle, &fp, filter_exp, 0,
+                     PCAP_NETMASK_UNKNOWN) == -1 ||
+        pcap_setfilter(conf->pcap_handle, &fp) == -1)
+    {
+        fprintf(stderr, "pcap filter error: %s\n",
+                pcap_geterr(conf->pcap_handle));
+        pcap_freecode(&fp);
+        pcap_close(conf->pcap_handle);
+        close(conf->sockfd);
+        return (-1);
+    }
+
+    pcap_freecode(&fp);
+
+    if (pcap_setnonblock(conf->pcap_handle, 1, errorbuf) == -1)
+        fprintf(stderr, "pcap_setnonblock: %s\n", errorbuf);
+
+    return (0);
+}
+
+
+/* int     icmp_creation(t_thread_context *ctx, int port)
 {
     int idx = port % MAX_PACKET_SIZE;
 
@@ -56,97 +172,4 @@ int send_socket(t_thread_context *ctx, int port, int idx)
     }
 
     return (0);
-}
-
-int socket_creation(t_config *conf)
-{
-    int                 one = 1;
-    int                 timeout_ms = 1000;
-    char                errorbuf[PCAP_ERRBUF_SIZE];
-    char                filter_exp[256];
-    struct bpf_program  fp;
-    char                ip_str[INET_ADDRSTRLEN];
-    struct in_addr      target_ip = conf->ip_address;
-    const char          *dev = "any";  // Siempre usar "any"
-    
-    /* Socket para ENVIAR paquetes IP completos */
-    conf->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-    if (conf->sockfd == -1)
-    {
-        if (errno == EPERM)
-        {
-            printf("ft_nmap: socket error ( %s ) - Must be root.\n", strerror(errno));
-            return (-1);
-        }
-        printf("ft_namp: socket error: %s\n", strerror(errno));
-        return (-1);
-    }
-    
-    if (setsockopt(conf->sockfd, IPPROTO_IP, IP_HDRINCL, &one, sizeof(one)) == -1)
-    {
-        printf("ft_nmap: setsockopt (IP_HDRINCL): %s\n", strerror(errno));
-        close(conf->sockfd);
-        return (-1);
-    }
-
-    /* ========== PCAP PARA RECIBIR ========== */
-    
-    //printf("[DEBUG] Using network device: %s\n", dev);
-    
-    // Abrir dispositivo para captura
-    conf->pcap_handle = pcap_open_live(dev, BUFSIZ, 1, timeout_ms, errorbuf);
-    if (conf->pcap_handle == NULL)
-    {
-        //printf("ft_nmap: pcap_open_live error: ( %s )\n", errorbuf);
-        close(conf->sockfd);
-        return (-1);
-    }
-
-    conf->pcap_datalink = pcap_datalink(conf->pcap_handle);
-
-    // Convertir IP a string para el filtro
-    inet_ntop(AF_INET, &target_ip, ip_str, INET_ADDRSTRLEN);
-
-    // Construir el filtro BPF - VERIFICAR FORMATO
-    snprintf(filter_exp, sizeof(filter_exp), "(ip proto 6 or ip proto 1) and src host %s", ip_str);
-    
-    //printf("[DEBUG] PCAP filter: %s\n", filter_exp);
-    //printf("[DEBUG] Target IP: %s (hex: 0x%08x)\n", ip_str, (unsigned int)target_ip.s_addr);
-
-    // Compilar filtro
-    if (pcap_compile(conf->pcap_handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1)
-    {
-        fprintf(stderr, "ft_nmap: pcap_compile error: %s\n", pcap_geterr(conf->pcap_handle));
-        fprintf(stderr, "Filter expression was: %s\n", filter_exp);
-        pcap_close(conf->pcap_handle);
-        close(conf->sockfd);
-        return (-1);
-    }
-
-    // Aplicar filtro
-    if (pcap_setfilter(conf->pcap_handle, &fp) == -1)
-    {
-        fprintf(stderr, "ft_nmap: pcap_setfilter error: %s\n", pcap_geterr(conf->pcap_handle));
-        pcap_freecode(&fp);
-        pcap_close(conf->pcap_handle);
-        close(conf->sockfd);
-        return (-1);
-    }
-
-    pcap_freecode(&fp);
-
-    // ***** Configurar como NO BLOQUEANTE *****
-    if (pcap_setnonblock(conf->pcap_handle, 1, errorbuf) == -1)
-    {
-        printf("[WARNING] pcap_setnonblock failed: %s\n", errorbuf);
-        // Continúa, pero será bloqueante
-    }
-    // else
-    // {
-    //     printf("[DEBUG] PCAP set to non-blocking mode\n");
-    // }
-    
-    //printf("[DEBUG] Filter applied successfully\n");
-    
-    return (0);
-}
+} */
