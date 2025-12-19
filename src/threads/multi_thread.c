@@ -1,62 +1,6 @@
 #include "ft_nmap.h"
 
 /*
- * Obtiene un paquete para el hilo ctx desde la cola global g_packet_queue.
- * Retorna 1 si se obtiene un paquete, 0 si no hay paquetes (timeout), -1 si se detuvo el escaneo.
- */
-
-int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header)
-{
-    t_packet_node   *prev;
-    t_packet_node   *current;
-    struct iphdr    *ip;
-    struct tcphdr   *tcp;
-    
-    ft_mutex(&g_packet_queue.mutex, LOCK);
-    prev = NULL;
-    current = g_packet_queue.head;
-
-    while (current && !g_stop)
-    {
-        ip = (struct iphdr *)(current->packet + offset_calcualte(ctx));
-
-        if (ip->protocol == IPPROTO_TCP)
-        {
-            tcp = (struct tcphdr *)((u_char *)ip + ip->ihl * 4);
-            if (ntohs(tcp->dest) == 40000 + ctx->thread_id)
-                break;
-        }
-        else if (ip->protocol == IPPROTO_ICMP)
-            break;
-        
-        prev = current;
-        current = current->next;
-    }
-
-    if (!current)
-    {
-        ft_mutex(&g_packet_queue.mutex, UNLOCK);
-        return 0;
-    }
-
-    if (prev)
-        prev->next = current->next;
-    else
-        g_packet_queue.head = current->next;
-
-    if (current == g_packet_queue.tail)
-        g_packet_queue.tail = prev;
-
-    *packet = current->packet;
-    *header = &current->header;
-    free(current);
-
-    ft_mutex(&g_packet_queue.mutex, UNLOCK);
-    return 1;
-
-}
-
-/*
  * Notifica a todos los hilos que el escaneo terminó.
  */
 
@@ -116,10 +60,6 @@ void	*thread_routine(void *data)
 
 void    threads_creation(t_config *conf, t_thread_context *ctx_array)
 {
-    //struct bpf_program  fp;
-    //char                errbuf[PCAP_ERRBUF_SIZE];
-    //char                filter[100];
-    //int                 source_port;
 
     for (int i = 0; i < conf->speedup && !g_stop; i++)
     {
@@ -132,18 +72,6 @@ void    threads_creation(t_config *conf, t_thread_context *ctx_array)
         ctx_array[i].next_port_idx = &conf->next_port_idx;
 
         ctx_array[i].pcap_handle = conf->pcap_handle;
-
-        /* source_port = 40000 + i;
-        snprintf(filter, sizeof(filter), "src host %s and (tcp dst port %d or (icmp and icmp[0] == 3))", inet_ntoa(conf->ip_address), source_port);
-
-        printf("[DEBUG] Thread %d filter: %s\n", i, filter);
-
-        if (pcap_compile(ctx_array[i].pcap_handle, &fp, filter, 0, PCAP_NETMASK_UNKNOWN) == -1 || pcap_setfilter(ctx_array[i].pcap_handle, &fp) == -1)
-        {
-            printf("Error configurando filtro para hilo %d\n", i);
-            g_stop = 1;
-        }
-        pcap_freecode(&fp); */
 
         if (pthread_create(&conf->threads[i], NULL, thread_routine, &ctx_array[i]) != 0)
             g_stop = 1;

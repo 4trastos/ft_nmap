@@ -1,5 +1,61 @@
 #include "ft_nmap.h"
 
+/*
+ * Obtiene un paquete para el hilo ctx desde la cola global g_packet_queue.
+ * Retorna 1 si se obtiene un paquete, 0 si no hay paquetes (timeout), -1 si se detuvo el escaneo.
+ */
+
+int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header)
+{
+    t_packet_node   *prev;
+    t_packet_node   *current;
+    struct iphdr    *ip;
+    struct tcphdr   *tcp;
+    
+    ft_mutex(&g_packet_queue.mutex, LOCK);
+    prev = NULL;
+    current = g_packet_queue.head;
+
+    while (current && !g_stop)
+    {
+        ip = (struct iphdr *)(current->packet + offset_calcualte(ctx));
+
+        if (ip->protocol == IPPROTO_TCP)
+        {
+            tcp = (struct tcphdr *)((u_char *)ip + ip->ihl * 4);
+            if (ntohs(tcp->dest) == 40000 + ctx->thread_id)
+                break;
+        }
+        else if (ip->protocol == IPPROTO_ICMP)
+            break;
+        
+        prev = current;
+        current = current->next;
+    }
+
+    if (!current)
+    {
+        ft_mutex(&g_packet_queue.mutex, UNLOCK);
+        return 0;
+    }
+
+    if (prev)
+        prev->next = current->next;
+    else
+        g_packet_queue.head = current->next;
+
+    if (current == g_packet_queue.tail)
+        g_packet_queue.tail = prev;
+
+    *packet = current->packet;
+    *header = &current->header;
+    free(current);
+
+    ft_mutex(&g_packet_queue.mutex, UNLOCK);
+    return 1;
+
+}
+
 int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port)
 {
     (void)header;
@@ -124,7 +180,6 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     // ================= TCP HEADER =================
 
-    // ¡IMPORTANTE! Usar thread_id, NO probe_id
     int source_port = 40000 + ctx->thread_id;
     tcp->source     = htons(source_port);
     tcp->dest       = htons(port);
@@ -158,7 +213,7 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
 int send_syn_packet(t_thread_context *ctx, int port)
 {
-    int                 sent_bytes;
+    int sent_bytes;
 
     memset(&ctx->target_addr, 0, sizeof(ctx->target_addr));
     ctx->target_addr.sin_family = AF_INET;

@@ -59,12 +59,10 @@ int socket_creation(t_config *conf)
     inet_ntop(AF_INET, &conf->ip_address, ip_str, sizeof(ip_str));
     snprintf(filter_exp, sizeof(filter_exp), "(ip proto 6 or ip proto 1) and src host %s", ip_str);
 
-    if (pcap_compile(conf->pcap_handle, &fp, filter_exp, 0,
-                     PCAP_NETMASK_UNKNOWN) == -1 ||
+    if (pcap_compile(conf->pcap_handle, &fp, filter_exp, 0, PCAP_NETMASK_UNKNOWN) == -1 ||
         pcap_setfilter(conf->pcap_handle, &fp) == -1)
     {
-        fprintf(stderr, "pcap filter error: %s\n",
-                pcap_geterr(conf->pcap_handle));
+        fprintf(stderr, "pcap filter error: %s\n", pcap_geterr(conf->pcap_handle));
         pcap_freecode(&fp);
         pcap_close(conf->pcap_handle);
         close(conf->sockfd);
@@ -78,42 +76,3 @@ int socket_creation(t_config *conf)
 
     return (0);
 }
-
-
-/* int     icmp_creation(t_thread_context *ctx, int port)
-{
-    int idx = port % MAX_PACKET_SIZE;
-
-    memset(&ctx->packets[idx], 0 , sizeof(struct ping_packet));
-    ctx->packets[idx].icmp_hdr.type = 8;
-    ctx->packets[idx].icmp_hdr.code = 0;
-    ctx->packets[idx].icmp_hdr.checksum = 0;
-    ctx->packets[idx].icmp_hdr.un.echo.id = getpid();
-    ctx->packets[idx].icmp_hdr.un.echo.sequence = ctx->thread_id;
-    gettimeofday(&ctx->packets[idx].timestamp, NULL);
-
-    memset(ctx->packets[idx].data, 0, ICMP_PAYLOAD_SIZE);
-    ctx->packets[idx].icmp_hdr.checksum = calculate_checksum(&ctx->packets[idx], sizeof(struct ping_packet));
-    return (idx);
-}
-
-
-int send_socket(t_thread_context *ctx, int port, int idx)
-{
-    ssize_t  sent_bytes = 0;
-
-    memset(&ctx->target_addr,0, sizeof(ctx->target_addr));
-    ctx->target_addr.sin_family = AF_INET;
-    ctx->target_addr.sin_port = htons(port);
-    ctx->target_addr.sin_addr = ctx->conf->ip_address;
-
-    sent_bytes = sendto(ctx->conf->sockfd, &ctx->packets[idx], sizeof(struct ping_packet), 0, (struct sockaddr *)&ctx->target_addr, sizeof(ctx->target_addr));
-    if (sent_bytes < 0)
-    {
-        printf("ft_nmap: sendto error: ( %s )\n", strerror(errno));
-        close(ctx->conf->sockfd);
-        return (-1);
-    }
-
-    return (0);
-} */
