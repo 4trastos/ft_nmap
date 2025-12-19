@@ -223,6 +223,7 @@ void	    *thread_routine(void *data);
 void        ft_mutex(t_mutex *mutex, t_opcode opcode);
 void        ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode);
 int         sequential_scan(t_config *conf);
+void        notify_threads_stop(void);
 
 /*** Scan Ports ***/
 

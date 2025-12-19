@@ -19,6 +19,13 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
     {
         tcp = (struct tcphdr *)((u_char *)ip + (ip->ihl * 4));
 
+        /* Validar que la respuesta es para ESTE scan */
+        if (ntohs(tcp->dest) != (40000 + ctx->thread_id))
+            return 0;
+
+        if (ntohs(tcp->source) != port)
+            return 0;
+
         /* RST → CLOSED */
         if (tcp->rst)
         {
@@ -39,9 +46,21 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
     {
         icmp = (struct icmphdr *)((u_char *)ip + (ip->ihl * 4));
 
-        /* Destination unreachable → FILTERED */
         if (icmp->type == ICMP_DEST_UNREACH)
         {
+            // ICMP contiene el IP + TCP ORIGINAL
+            struct iphdr  *orig_ip;
+            struct tcphdr *orig_tcp;
+
+            orig_ip = (struct iphdr *)((u_char *)icmp + sizeof(struct icmphdr));
+            orig_tcp = (struct tcphdr *)((u_char *)orig_ip + orig_ip->ihl * 4);
+
+            /* Validar que era NUESTRO SYN */
+             if (ntohs(orig_tcp->dest) != port)
+            return 0;
+
+            if (ntohs(orig_tcp->source) != (40000 + ctx->thread_id))
+                return 0;
             set_port_state(ctx->conf, port, PORT_FILTERED);
             return (0);
         }
@@ -163,7 +182,6 @@ int receive_syn_response(t_thread_context *ctx, int port)
 {
     struct pcap_pkthdr  *header;
     const u_char        *packet;
-    //int                 returned;
     struct timeval      start, now;
     double              time_elapsed;
     
@@ -184,30 +202,8 @@ int receive_syn_response(t_thread_context *ctx, int port)
         if (get_packet_for_thread(ctx, &packet, &header))
         {
             process_syn_packet(ctx, packet, header, port);
-            free((void*)packet);
             return 0;
         }
-
-        /* ft_mutex(ctx->recv_mutex, LOCK);
-        returned = pcap_next_ex(ctx->conf->pcap_handle, &header, &packet);
-        ft_mutex(ctx->recv_mutex, UNLOCK);
-
-        if (returned == 1)
-        {
-            if (packet_is_for_me(ctx, packet, header))
-            {
-                ft_mutex(ctx->recv_mutex, LOCK);
-                process_syn_packet(ctx, packet, header, port);
-                ft_mutex(ctx->recv_mutex, UNLOCK);
-                return (0);
-            }
-        }
-        else if (returned == 0)  // Timeout
-        {
-            usleep(10000);
-            continue;
-        } */
-
     }
     
     printf("[DEBUG Thread %d] No response for port %d\n", ctx->thread_id, port);

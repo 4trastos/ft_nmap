@@ -141,7 +141,7 @@ int main(int argc, char **argv)
             else if (conf->ports[i].state == PORT_OPEN_FILTERED)
                 printf("%d/tcp      %s                              %s(Open|Filtered)        Open|Filtered\n", conf->ports[i].number, service_name, show_scantype(conf));
             else
-                printf("%d-5d/tcp UNKNOWN\n", conf->ports[i].number);
+                printf("%d/tcp UNKNOWN\n", conf->ports[i].number);
         }
 
         gettimeofday(&end, NULL);

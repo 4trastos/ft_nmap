@@ -18,9 +18,9 @@ int         sequential_scan(t_config *conf)
     ctx.next_port_idx = &conf->next_port_idx;
     ctx.pcap_handle = conf->pcap_handle;
 
-    memset(&ctx.target_addr, 0, sizeof(ctx.target_addr));
+    /* memset(&ctx.target_addr, 0, sizeof(ctx.target_addr));
     ctx.target_addr.sin_family = AF_INET;
-    ctx.target_addr.sin_addr = conf->ip_address;
+    ctx.target_addr.sin_addr = conf->ip_address; */
 
     conf->next_port_idx = 0;
 

@@ -6,62 +6,6 @@
 //    0001 = id(1)
 //    0001 = sequence(1)
 
-int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header)
-{
-    pthread_mutex_lock(&g_packet_queue.mutex);
-    t_packet_node   *prev = NULL;
-    t_packet_node   *current = g_packet_queue.head;
-    struct iphdr    *ip;
-    struct tcphdr   *tcp;
-
-    while (current && !g_stop)
-    {
-        ip = (struct iphdr *)(current->packet + offset_calcualte(ctx));
-        if (ip->protocol == IPPROTO_TCP)
-        {
-            tcp = (struct tcphdr *)((u_char *)ip + (ip->ihl * 4));
-            if (ntohs(tcp->dest) == 40000 + ctx->thread_id)
-            {
-                // Lo sacamos de la cola
-                if (prev)
-                    prev->next = current->next;
-                else
-                    g_packet_queue.head = current->next;
-                if (current == g_packet_queue.tail)
-                    g_packet_queue.tail = prev;
-
-                *packet = current->packet;
-                *header = &current->header;
-                free(current);
-                pthread_mutex_unlock(&g_packet_queue.mutex);
-                return (1);
-            }
-        }
-        if (ip->protocol == IPPROTO_ICMP)
-        {
-            if (prev)
-                prev->next = current->next;
-            else
-                g_packet_queue.head = current->next;
-            if (current == g_packet_queue.tail)
-                    g_packet_queue.tail = prev;
-            
-            *packet = current->packet;
-            *header = &current->header;
-            free(current);
-            pthread_mutex_unlock(&g_packet_queue.mutex);
-            return (1);
-        }
-        prev = current;
-        current = current->next;
-    }
-
-    // No hay paquete para este thread
-    pthread_cond_wait(&g_packet_queue.cond, &g_packet_queue.mutex);
-    pthread_mutex_unlock(&g_packet_queue.mutex);
-    return (0);
-}
-
 uint16_t    calculate_checksum(void *packet, size_t len)
 {
     uint32_t    sum = 0;
