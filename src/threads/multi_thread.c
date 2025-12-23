@@ -33,14 +33,14 @@ void	*thread_routine(void *data)
 
         port = conf->ports[idx].number;
 
-        printf("[DEBUG Thread %d] Scanning port %d from source port %d\n", ctx->thread_id, port, 40000 + ctx->thread_id);
+        //printf("[DEBUG Thread %d] Scanning port %d from source port %d\n", ctx->thread_id, port, 40000 + ctx->thread_id);
 
         if (scan_port(ctx, port) != 0)
             g_stop = 1;
 
-        ft_mutex(ctx->print_mutex, LOCK);
-        printf("[Thread %d] Puerto %d escaneado\n", ctx->thread_id, conf->ports[idx].number);
-        ft_mutex(ctx->print_mutex, UNLOCK);
+        // ft_mutex(ctx->print_mutex, LOCK);
+        // printf("[Thread %d] Puerto %d escaneado\n", ctx->thread_id, conf->ports[idx].number);
+        // ft_mutex(ctx->print_mutex, UNLOCK);
 
         // Procesar paquetes pendientes sin bloquear indefinidamente
         while (get_packet_for_thread(ctx, &packet, &header)  == 1)

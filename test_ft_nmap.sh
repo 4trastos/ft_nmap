@@ -5,7 +5,7 @@
 FT_NMAP="./ft_nmap"
 
 TEST_HOSTS=("127.0.0.1" "google.es" "scanme.nmap.org")
-PORT_RANGES=("33,53,80,443,450-500" "1-10" "80")
+PORT_RANGES=("33,55,80,443,450-500" "1-10" "80")
 SCAN_TYPES=("SYN" "ACK" "FIN" "NULL" "XMAS" "UDP" "SYN,ACK,FIN,XMAS")
 SPEEDUPS=(0 4 16 70 250)
 

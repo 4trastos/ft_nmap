@@ -83,6 +83,13 @@ int ft_parser_args(t_config *conf, char **argv)
                 return (-1);
             }
         }
+        else
+        {
+            printf("❌ Bad option `%s' (argc %d) \n", argv[i], i);
+            printf("Usage: --ip <IPv4 | hostname> [--ports <ports>] [--speedup <number>] [--scan <type>]\n");
+            conf->is_valid = false;
+            return (-1);
+        }
         i++;
     }
     return (0);

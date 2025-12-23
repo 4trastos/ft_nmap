@@ -115,7 +115,7 @@ int process_tcp_response(t_thread_context *ctx, const u_char *packet, struct pca
 
             // Validar que era NUESTRO SYN
             if (ntohs(orig_tcp->dest) != port)
-            return 0;
+                return 0;
 
             if (ntohs(orig_tcp->source) != (40000 + ctx->thread_id))
                 return 0;

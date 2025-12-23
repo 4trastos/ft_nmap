@@ -22,13 +22,13 @@ uint16_t    calculate_checksum(void *packet, size_t len)
 
 int socket_creation(t_config *conf)
 {
-    int one = 1;
-    int timeout_ms = 10;
-    char errorbuf[PCAP_ERRBUF_SIZE];
-    char filter_exp[256];
-    struct bpf_program fp;
-    char ip_str[INET_ADDRSTRLEN];
-    const char *dev = "any";
+    int                 one = 1;
+    int                 timeout_ms = 10;
+    char                errorbuf[PCAP_ERRBUF_SIZE];
+    char                filter_exp[256];
+    struct bpf_program  fp;
+    char                ip_str[INET_ADDRSTRLEN];
+    const char          *dev = "any";
 
     /* ===== RAW SOCKET (SEND) ===== */
     conf->sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
