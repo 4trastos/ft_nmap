@@ -1,0 +1,65 @@
+
+---
+
+# Argumentos de defensa oral 
+
+
+---
+
+##  ¿Qué has implementado exactamente en este proyecto?
+
+> He implementado un escáner de puertos inspirado en nmap que soporta múltiples tipos de escaneo TCP y UDP, utilizando **raw sockets**, **pcap para captura pasiva** y **pthread para paralelización**.
+> El objetivo principal ha sido reproducir el comportamiento real de los scans, no simplemente conectar a los puertos.
+
+---
+
+## ¿Por qué usas pcap y no recvfrom directamente?
+
+> Porque pcap me permite capturar **todas las respuestas entrantes**, independientemente del socket o del hilo que haya enviado el paquete.
+> Esto se acerca más al funcionamiento real de nmap, donde hay un listener central que distribuye las respuestas a los workers.
+
+
+---
+
+##  ¿Cómo evitas race conditions entre hilos?
+
+> Uso una **cola global protegida por mutex** donde se almacenan los paquetes capturados por pcap.
+> Cada hilo extrae únicamente los paquetes que corresponden a su puerto de origen, identificado por el source port único asignado por hilo.
+
+
+---
+
+##  ¿Por qué el UDP scan devuelve “Open|Filtered” incluso en puertos como 53?
+
+> Porque en UDP, la **ausencia de respuesta no permite distinguir entre un puerto abierto o filtrado**.
+> Sin payload específico de aplicación, muchos servicios UDP no responden, y nmap también marca esos puertos como `open|filtered`.
+
+
+---
+
+## ¿Por qué no implementaste payloads de aplicación por defecto?
+
+> El subject no lo exige y el objetivo principal es la **detección de estado del puerto**, no la identificación del servicio o protocolo.
+> Sin embargo, la arquitectura permite añadir fácilmente payloads específicos como bonus.
+
+
+---
+
+## ¿Cómo determinas el estado de los puertos según el scan?
+
+Puedes decir:
+
+> * **SYN scan**: SYN+ACK → OPEN, RST → CLOSED, timeout → FILTERED
+> * **NULL / FIN / XMAS**: RST → CLOSED, timeout → OPEN|FILTERED
+> * **ACK scan**: RST → UNFILTERED, timeout → FILTERED
+> * **UDP scan**: ICMP port unreachable → CLOSED, timeout → OPEN|FILTERED
+
+---
+
+##  ¿Qué limitaciones conoces de tu implementación?
+
+> * No se incluyen payloads específicos para servicios UDP por defecto
+> * No se realiza fingerprinting de versiones
+> * No se implementa IPv6
+>
+> Estas limitaciones están alineadas con el alcance del proyecto.
