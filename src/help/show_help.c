@@ -77,9 +77,11 @@ void        show_configuration(t_config *conf)
 
 char    *show_scantype(t_config *conf)
 {
-    char            scan_str[256] = {0};
+    char            scan_str[64];
     int             first = 1;
     char            *aux = NULL;
+
+    memset(scan_str, 0, sizeof(scan_str));
 
     if (conf->scan_type & SCAN_SYN)
     {

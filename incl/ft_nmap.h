@@ -189,7 +189,7 @@ int         icmp_creation(t_thread_context *ctx, int port);
 uint16_t    calculate_checksum(void *packet, size_t len);
 int         send_socket(t_thread_context *ctx, int port, int idx);
 int         receive_response(t_thread_context *ctx, int port);
-int         process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port);
+int         process_tcp_response(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port);
 void        set_port_state(t_config *conf, int port, t_port_state state);
 int         get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header);
 void        *packet_reader_thread(void *arg);
@@ -229,21 +229,17 @@ void        notify_threads_stop(void);
 
 int         scan_port(t_thread_context *ctx, int port);
 int         analysis_flags(t_thread_context *ctx, int port);
-int         syn_scan(t_thread_context *ctx, int port);
-int         null_scan(t_thread_context *ctx, int port);
-int         fin_scan(t_thread_context *ctx, int port);
-int         xmas_scan(t_thread_context *ctx, int port);
-int         ack_scan(t_thread_context *ctx, int port);
-int         udp_scan(t_thread_context *ctx, int port);
+int         scan_now(t_thread_context *ctx, int port);
+int         init_scan(t_thread_context *ctx, int port);
 void        set_port_state(t_config *conf, int port, t_port_state state);
 int         set_default_ports(t_config *conf, t_thread_context *threads);
 
 /*** SYN SCAN ***/
 
-int         syn_packet_build(t_thread_context *ctx, int port);
-int         syn_packet_build(t_thread_context *ctx, int port);
-int         send_syn_packet(t_thread_context *ctx, int port);
-int         receive_syn_response(t_thread_context *ctx, int port);
-int         offset_calcualte(t_thread_context *ctx);
+int         packet_build(t_thread_context *ctx, int port);
+int         packet_build(t_thread_context *ctx, int port);
+int         send_packet(t_thread_context *ctx, int port);
+int         receive_response(t_thread_context *ctx, int port);
+int         offset_calculate(t_thread_context *ctx);
 
 #endif 

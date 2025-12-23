@@ -1,9 +1,7 @@
 #include "ft_nmap.h"
 
-/*
- * Obtiene un paquete para el hilo ctx desde la cola global g_packet_queue.
- * Retorna 1 si se obtiene un paquete, 0 si no hay paquetes (timeout), -1 si se detuvo el escaneo.
- */
+/* - Obtiene un paquete para el hilo ctx desde la cola global g_packet_queue.
+   - Retorna 1 si se obtiene un paquete, 0 si no hay paquetes (timeout), -1 si se detuvo el escaneo. */
 
 int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct pcap_pkthdr **header)
 {
@@ -18,7 +16,7 @@ int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct p
 
     while (current && !g_stop)
     {
-        ip = (struct iphdr *)(current->packet + offset_calcualte(ctx));
+        ip = (struct iphdr *)(current->packet + offset_calculate(ctx));
 
         if (ip->protocol == IPPROTO_TCP)
         {
@@ -56,7 +54,7 @@ int get_packet_for_thread(t_thread_context *ctx, const u_char **packet, struct p
 
 }
 
-int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port)
+int process_tcp_response(t_thread_context *ctx, const u_char *packet, struct pcap_pkthdr *header, int port)
 {
     (void)header;
     struct iphdr    *ip;
@@ -64,7 +62,7 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
     struct icmphdr  *icmp;
     int             link_offset;
 
-    link_offset = offset_calcualte(ctx);
+    link_offset = offset_calculate(ctx);
     if (link_offset < 0)
         return (-1);
 
@@ -85,12 +83,15 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
         /* RST → CLOSED */
         if (tcp->rst)
         {
-            set_port_state(ctx->conf, port, PORT_CLOSED);
+            if (ctx->conf->scan_type & SCAN_ACK)
+                set_port_state(ctx->conf, port, PORT_UNFILTERED);       // RST + ACK scan
+            else
+                set_port_state(ctx->conf, port, PORT_CLOSED);           // RST + SYN scan
             return (0);
         }
         
         /* SYN + ACK → OPEN */
-        if (tcp->syn && tcp->ack)
+        if ((ctx->conf->scan_type & SCAN_SYN) && tcp->syn && tcp->ack)
         {
             set_port_state(ctx->conf, port, PORT_OPEN);
             return (0);
@@ -102,7 +103,8 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
     {
         icmp = (struct icmphdr *)((u_char *)ip + (ip->ihl * 4));
 
-        if (icmp->type == ICMP_DEST_UNREACH)
+        if (icmp->type == ICMP_DEST_UNREACH && (icmp->code == 1 || icmp->code == 2 || icmp->code == 3 || 
+            icmp->code == 9 || icmp->code == 10 || icmp->code == 13))
         {
             // ICMP contiene el IP + TCP ORIGINAL
             struct iphdr  *orig_ip;
@@ -111,8 +113,8 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
             orig_ip = (struct iphdr *)((u_char *)icmp + sizeof(struct icmphdr));
             orig_tcp = (struct tcphdr *)((u_char *)orig_ip + orig_ip->ihl * 4);
 
-            /* Validar que era NUESTRO SYN */
-             if (ntohs(orig_tcp->dest) != port)
+            // Validar que era NUESTRO SYN
+            if (ntohs(orig_tcp->dest) != port)
             return 0;
 
             if (ntohs(orig_tcp->source) != (40000 + ctx->thread_id))
@@ -125,7 +127,18 @@ int process_syn_packet(t_thread_context *ctx, const u_char *packet, struct pcap_
     return (0);  // Paquete no reconocido
 }
 
-int offset_calcualte(t_thread_context *ctx)
+/*  
+    | Código | Significado                               |
+    | ------ | ----------------------------------------- |
+    | 1      | Host unreachable                          |
+    | 2      | Protocol unreachable                      |
+    | 3      | Port unreachable                          |
+    | 9      | Network administratively prohibited       |
+    | 10     | Host administratively prohibited          |
+    | 13     | Communication administratively prohibited | 
+*/
+
+int offset_calculate(t_thread_context *ctx)
 {
     int offset = -1;
 
@@ -138,22 +151,23 @@ int offset_calcualte(t_thread_context *ctx)
     return (offset);
 }
 
-int syn_scan(t_thread_context *ctx, int port)
+int init_scan(t_thread_context *ctx, int port)
 {
-    if (syn_packet_build(ctx, port) < 0)
+    if (packet_build(ctx, port) < 0)
         return (-1);
-    if (send_syn_packet(ctx, port) < 0)
+    if (send_packet(ctx, port) < 0)
         return (-1);
-    if (receive_syn_response(ctx, port) < 0)
+    if (receive_response(ctx, port) < 0)
         return (-1);
     return (0);
 }
 
 
-int syn_packet_build(t_thread_context *ctx, int port)
+int packet_build(t_thread_context *ctx, int port)
 {
     struct iphdr            *ip;
     struct tcphdr           *tcp;
+    struct udphdr           *udp;
     struct pseudo_header    psh;
     unsigned char           *packet;
 
@@ -162,6 +176,23 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     ip = (struct iphdr *)packet;
     tcp = (struct tcphdr *)(packet + sizeof(struct iphdr));
+    udp = (struct udphdr *)(packet + sizeof(struct iphdr));
+    int source_port = 40000 + ctx->thread_id;
+
+    // ================= UDP ======================
+
+    if (ctx->conf->scan_type & SCAN_UDP)
+    {
+        ip->protocol = IPPROTO_UDP;
+        ip->tot_len = htons(sizeof(struct iphdr) + sizeof(struct udphdr));
+
+        udp->source = htons(source_port);
+        udp->dest = htons(port);
+        udp->len = htons(sizeof(struct udphdr));
+        udp->check = 0;
+
+        return (0);
+    }
 
     // ================= IP HEADER =================
 
@@ -180,13 +211,19 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     // ================= TCP HEADER =================
 
-    int source_port = 40000 + ctx->thread_id;
     tcp->source     = htons(source_port);
     tcp->dest       = htons(port);
     tcp->seq        = htonl(rand());
     tcp->ack_seq    = 0;
     tcp->doff       = sizeof(struct tcphdr) / 4;
-    tcp->syn        = 1;
+    if (ctx->conf->scan_type & SCAN_SYN)
+        tcp->syn        = 1;
+    if (ctx->conf->scan_type & SCAN_FIN)
+        tcp->fin = 1;
+    if (ctx->conf->scan_type & SCAN_ACK)
+        tcp->ack = 1;
+    if (ctx->conf->scan_type & SCAN_XMAS)
+        tcp->fin = tcp->psh = tcp->urg = 1;
     tcp->window     = htons(1024);
     tcp->check      = 0;
     tcp->urg_ptr    = 0;
@@ -205,13 +242,13 @@ int syn_packet_build(t_thread_context *ctx, int port)
 
     tcp->check = calculate_checksum(pseudo_packet, sizeof(psh) + sizeof(struct tcphdr));
 
-    // ¡GUARDAR EL NÚMERO DE SECUENCIA ENVIADO!
+    // ======= GUARDAR EL NÚMERO DE SECUENCIA ENVIADO =====
     ctx->last_seq_sent = ntohl(tcp->seq);
 
     return (0);
 }
 
-int send_syn_packet(t_thread_context *ctx, int port)
+int send_packet(t_thread_context *ctx, int port)
 {
     int sent_bytes;
 
@@ -233,7 +270,7 @@ int send_syn_packet(t_thread_context *ctx, int port)
     return (0);
 }
 
-int receive_syn_response(t_thread_context *ctx, int port)
+int receive_response(t_thread_context *ctx, int port)
 {
     struct pcap_pkthdr  *header;
     const u_char        *packet;
@@ -249,19 +286,25 @@ int receive_syn_response(t_thread_context *ctx, int port)
         
         if (time_elapsed >= 2.0)
         {
-            printf("[DEBUG Thread %d] TIMEOUT for port %d\n", ctx->thread_id, port);
-            set_port_state(ctx->conf, port, PORT_FILTERED);
+            if (ctx->conf->scan_type & SCAN_UDP)
+                set_port_state(ctx->conf, port, PORT_OPEN_FILTERED);
+            else if (ctx->conf->scan_type & (SCAN_NULL | SCAN_FIN | SCAN_XMAS))
+                set_port_state(ctx->conf, port, PORT_OPEN_FILTERED);
+            else if (ctx->conf->scan_type & SCAN_ACK)
+                set_port_state(ctx->conf, port, PORT_FILTERED);
+            else
+                set_port_state(ctx->conf, port, PORT_FILTERED);     // SYN scan
             return (0);
         }
         
         if (get_packet_for_thread(ctx, &packet, &header))
         {
-            process_syn_packet(ctx, packet, header, port);
+            process_tcp_response(ctx, packet, header, port);
             return 0;
         }
     }
     
-    printf("[DEBUG Thread %d] No response for port %d\n", ctx->thread_id, port);
     set_port_state(ctx->conf, port, PORT_FILTERED);
     return (0);
 }
+

@@ -12,31 +12,13 @@ void set_port_state(t_config *conf, int port, t_port_state state)
     }
 }
 
-int dispatch_scan(t_thread_context *ctx, int port)
-{
-    if (ctx->conf->scan_type & SCAN_SYN)
-        return (syn_scan(ctx, port));
-    // if (ctx->conf->scan_type & SCAN_NULL)
-    //     return (null_scan(ctx, port));
-    // if (ctx->conf->scan_type & SCAN_FIN)
-    //     return (fin_scan(ctx, port));
-    // if (ctx->conf->scan_type & SCAN_XMAS)
-    //     return (xmas_scan(ctx, port));
-    // if (ctx->conf->scan_type & SCAN_ACK)
-    //     return (ack_scan(ctx, port));
-    // if (ctx->conf->scan_type & SCAN_UDP)
-    //     return (udp_scan(ctx, port));
-
-    return (-1);
-}
-
 int    scan_port(t_thread_context *ctx, int port)
 { 
     struct timeval start;
     struct timeval end;
 
     gettimeofday(&start, NULL);
-    if (dispatch_scan(ctx, port) == -1)
+    if (init_scan(ctx, port) == -1)
         return (-1);     
     gettimeofday(&end, NULL);
 

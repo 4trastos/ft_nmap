@@ -1,9 +1,5 @@
 #include "ft_nmap.h"
 
-/*
- * Notifica a todos los hilos que el escaneo terminó.
- */
-
 void    notify_threads_stop(void)
 {
     ft_mutex(&g_packet_queue.mutex, LOCK);
@@ -48,9 +44,7 @@ void	*thread_routine(void *data)
 
         // Procesar paquetes pendientes sin bloquear indefinidamente
         while (get_packet_for_thread(ctx, &packet, &header)  == 1)
-        {
-            process_syn_packet(ctx, packet, header, port);  // NO liberar packet si es compartido entre hilos
-        }
+            process_tcp_response(ctx, packet, header, port);  // NO liberar packet si es compartido entre hilos
         
     }
 
