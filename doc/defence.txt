@@ -41,7 +41,6 @@
 
 ## ¿Cómo determinas el estado de los puertos según el scan?
 
-Puedes decir:
 
 > * **SYN scan**: SYN+ACK → OPEN, RST → CLOSED, timeout → FILTERED
 > * **NULL / FIN / XMAS**: RST → CLOSED, timeout → OPEN|FILTERED
