@@ -52,22 +52,23 @@ void	*thread_routine(void *data)
     
 }
 
-void    threads_creation(t_config *conf, t_thread_context *ctx_array)
+void    threads_creation(t_config *conf, t_thread_context *threads)
 {
 
     for (int i = 0; i < conf->speedup && !g_stop; i++)
     {
-        ctx_array[i].thread_id = i;
-        ctx_array[i].conf = conf;
-        ctx_array[i].work_mutex = &conf->work_mutex;
-        ctx_array[i].send_mutex = &conf->send_mutex;
-        ctx_array[i].print_mutex = &conf->print_mutex;
-        ctx_array[i].recv_mutex = &conf->recv_mutex;
-        ctx_array[i].next_port_idx = &conf->next_port_idx;
+        memset(&threads[i], 0, sizeof(t_thread_context));
+        threads[i].thread_id = i;
+        threads[i].conf = conf;
+        threads[i].work_mutex = &conf->work_mutex;
+        threads[i].send_mutex = &conf->send_mutex;
+        threads[i].print_mutex = &conf->print_mutex;
+        threads[i].recv_mutex = &conf->recv_mutex;
+        threads[i].next_port_idx = &conf->next_port_idx;
 
-        ctx_array[i].pcap_handle = conf->pcap_handle;
+        threads[i].pcap_handle = conf->pcap_handle;
 
-        if (pthread_create(&conf->threads[i], NULL, thread_routine, &ctx_array[i]) != 0)
+        if (pthread_create(&conf->threads[i], NULL, thread_routine, &threads[i]) != 0)
             g_stop = 1;
     }
 

@@ -3,24 +3,40 @@
 volatile sig_atomic_t   g_stop = 0;
 t_packet_queue g_packet_queue = {0};
 
+void free_packet_queue(void)
+{
+    t_packet_node   *current, *next;
+
+    ft_mutex(&g_packet_queue.mutex, LOCK);
+    current = g_packet_queue.head;
+    while (current)
+    {
+        next = current->next;
+        free((void*)current->packet);
+        free(current);
+        current = next;
+    }
+    g_packet_queue.head = NULL;
+    g_packet_queue.tail = NULL;
+    ft_mutex(&g_packet_queue.mutex, UNLOCK);
+}
+
+
 void    cleanup(t_config *conf, t_thread_context *threads)
 {
-    if (!conf || !threads)
-        return;
-    for (int i = 0; i < conf->speedup; i++)
+    if (threads)
     {
-        if (threads[i].pcap_handle)
-        {
-            pcap_close(threads[i].pcap_handle);
-            threads[i].pcap_handle = NULL;
-        }
+        for (int i = 0; i < conf->speedup; i++)
+            if (threads[i].pcap_handle)
+                pcap_close(threads[i].pcap_handle);
+        free(threads);
     }
-    
-    if (conf->ports != NULL)
+    if (conf)
+    {
         free(conf->ports);
-    if (conf->threads != NULL)
         free(conf->threads);
-    free(conf);
+        free(conf);
+    }
 }
 
 int main(int argc, char **argv)
@@ -51,7 +67,7 @@ int main(int argc, char **argv)
     init_struct(conf, argc);
     srand(time(NULL));
     if (ft_parser_args(conf, argv) != 0)
-        exit = 1;
+        return (1);
     if (conf->show_help)
     {
         show_help(conf, threads);
@@ -149,6 +165,9 @@ int main(int argc, char **argv)
         printf("\nft_nmap done: 1 IP address (1 host up) scanned in %.2f seconds\n", total_time);
     }
 
+    g_stop = 1;
+    pthread_join(packet_reader, NULL);
+    free_packet_queue();
     cleanup(conf, threads);
     return (exit);
 }

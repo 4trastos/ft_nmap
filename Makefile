@@ -8,7 +8,7 @@ RM = rm -f
 SRC = src/main.c src/args/parser_args.c src/help/show_help.c src/args/parse_ports.c src/args/parse_ip.c src/args/parse_scan_types.c \
 	src/args/parse_speedup.c src/data/ports.c src/data/results.c src/network/network_scan.c src/threads/threads.c src/threads/sequential_scan.c \
 	src/network/packet_builder.c src/network/socket_setup.c src/threads/multi_thread.c src/utils/ft_atoi.c src/data/scan_ports.c\
-	src/output/print_results.c src/utils/string_utils.c src/utils/handler_signal.c
+	src/utils/string_utils.c src/utils/handler_signal.c
 
 OBJTS = $(SRC:.c=.o)
 

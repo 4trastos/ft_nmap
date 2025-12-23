@@ -416,6 +416,11 @@ Cada uno:
 
 ```
 docker run -it --rm --cap-add=NET_RAW -v "$(pwd):/workspace" -w /workspace \
-  ubuntu:24.04 bash -c "apt update && apt install -y build-essential iproute2 traceroute nmap libpcap-dev gdb && bash"
+  ubuntu:24.04 bash -c "apt update && apt install -y build-essential iproute2 traceroute nmap libpcap-dev gdb valgrind && bash"
 ```
+
+```
+valgrind --leak-check=full --show-leak-kinds=all
+```
+
 

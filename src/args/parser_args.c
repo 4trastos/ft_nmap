@@ -6,6 +6,7 @@
 
 void    init_struct(t_config *conf, int argc)
 {
+    memset(conf, 0, sizeof(t_config));
     conf->show_help = false;
     conf->use_file = false;
     conf->hostname = NULL;

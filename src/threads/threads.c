@@ -13,16 +13,3 @@ void    ft_mutex(t_mutex *mutex, t_opcode opcode)
     else
         printf("🚨 Wrong opcode for mutex handle use <LOCK> <UNLOCK> <INIT> <DESTROY> 🚨\n");
 }
-
-/* void    ft_threads(t_thread_context *thread, void *(*foo)(void *), void *data, t_opcode opcode)
-{
-    if (opcode == CREATE)
-        pthread_create(thread->conf->threads, NULL, foo, data);
-    else if (opcode == JOIN)
-        pthread_join(thread->conf->threads, NULL);
-    else if (opcode == DETACH)
-        pthread_detach(thread->conf->threads);
-    else
-        printf("🚨 Wrong opcode for thread_handle use <CREATE> <JOIN> <DETACH> 🚨\n");
-}
- */

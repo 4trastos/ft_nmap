@@ -167,6 +167,7 @@ typedef struct s_thread_context
 
 int         main(int argc, char **argv);
 void        cleanup(t_config *conf, t_thread_context *threads);
+void        free_packet_queue(void);
 
 //*** Parser ***/
 

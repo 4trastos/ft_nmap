@@ -9,8 +9,6 @@ void    init_signal(void)
     sa.sa_flags = 0;
 
     sigaction(SIGINT, &sa, NULL);
-
-    //signal(SIGINT, handler_singint);
 }
 
 void    handler_singint(int signum)

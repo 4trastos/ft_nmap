@@ -28,7 +28,7 @@ int         sequential_scan(t_config *conf)
         memset(ctx.sendbuffer, 0, MAX_PACKET_SIZE);
         memset(ctx.recvbuffer, 0, MAX_PACKET_SIZE);
 
-        //printf("[DEBUG Sequential] Scanning port %d from source port %d\n", port, 40000 + ctx.thread_id);
+        // printf("[DEBUG Sequential] Scanning port %d from source port %d\n", port, 40000 + ctx.thread_id);
 
         result = scan_port(&ctx, port);
 
