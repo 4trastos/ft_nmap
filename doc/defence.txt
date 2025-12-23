@@ -1,9 +1,3 @@
-
----
-
-# Argumentos de defensa oral 
-
-
 ---
 
 ##  ¿Qué has implementado exactamente en este proyecto?
