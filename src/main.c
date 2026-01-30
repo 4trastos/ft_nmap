@@ -100,6 +100,9 @@ static void    run_scan_target(t_config *conf)
     double total_time = (double)(end.tv_sec - start.tv_sec) + (double)(end.tv_usec - start.tv_usec) / 1000000.0;
     printf("\nft_nmap done: 1 IP address (1 host up) scanned in %.2f seconds\n", total_time);
 
+    g_stop = 1;
+    pthread_join(packet_reader, NULL);
+
     if (conf->pcap_handle)
     {
         pcap_close(conf->pcap_handle);
@@ -111,8 +114,6 @@ static void    run_scan_target(t_config *conf)
         conf->sockfd = -1;
     }
 
-    g_stop = 1;
-    pthread_join(packet_reader, NULL);
     free_packet_queue();
 }
 
