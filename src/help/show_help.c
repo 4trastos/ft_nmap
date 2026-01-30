@@ -8,6 +8,7 @@ void    show_help(t_config *conf, t_thread_context *threads)
     printf("  ft_nmap [OPTIONS] --ip <address>\n");
     printf("\nOptions:\n");
     printf(" --help                     Show this help message and exit\n");
+    printf(" --file                     File name containing IP addresses to scan,\n");
     printf(" --ip <address>             Target IPv4 address or hostname (FQDN allowed)\n");
     printf(" --ports <range/list>       Ports to scan (max 1024 total):\n");
     printf("                               - Examples: 1-10, 80, 22,80,443, 1,5-15\n");

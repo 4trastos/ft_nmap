@@ -3,6 +3,7 @@
 // ft_nmap --ip 8.8.8.8
 // ft_nmap --ip scanme.nmap.org --ports 80
 // ft_nmap --ip 10.0.0.1 --ports 1-100 --speedup 5 --scan SYN
+// ft_nmap address/targets.txt
 
 void    init_struct(t_config *conf, int argc)
 {
