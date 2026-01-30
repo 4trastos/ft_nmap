@@ -77,6 +77,14 @@ int ft_parser_args(t_config *conf, char **argv)
                 if (parser_result == 1)
                     i++;
             }
+            else if (strcmp(argv[i], "--file") == 0)
+            {
+                parser_result = parse_file(conf, argv, i);
+                if (parser_result == -1)
+                    return (-1);
+                if (parser_result == 1)
+                    i++;
+            }
             else
             {
                 printf("❌ Bad option `%s' (argc %d) \n", argv[i], i);

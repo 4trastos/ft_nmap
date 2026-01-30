@@ -27,10 +27,10 @@ void *packet_reader_thread(void *arg)
             pthread_cond_broadcast(&g_packet_queue.cond);
             pthread_mutex_unlock(&g_packet_queue.mutex);
         }
+        else if (ret == -1 || ret == -2)
+            break;
         else
-        {
-            usleep(1000); // evitar busy wait
-        }
+            usleep(1000); // Puede retornar 0 por timeout y evitar busy wait
     }
     return NULL;
 }

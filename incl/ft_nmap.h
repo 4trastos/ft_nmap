@@ -179,6 +179,7 @@ int         port_validator(t_config *conf, char **token);
 int         validate_range(const char *token, int *start, int *end);
 int         parse_speedup(t_config *conf, char **argv, int i);
 int         parse_scantypes(t_config *conf, char **argv, int i);
+int         parse_file(t_config *conf, char **argv, int i);
 char        **split_scan(char *str, char c);
 uint32_t    get_local_ip(void);
 
