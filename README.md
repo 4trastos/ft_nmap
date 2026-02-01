@@ -158,6 +158,59 @@ valgrind --leak-check=full --show-leak-kinds=all ./ft_nmap [args]
 
 ---
 
+### Tabla de Resumen para tu Defensa
+
+| Tipo de Scan | Respuesta si está ABIERTO | Respuesta si está CERRADO |
+| --- | --- | --- |
+| **SYN** | SYN/ACK | RST |
+| **NULL/FIN/XMAS** | Silencio | RST/ACK |
+| **ACK** | RST (Estado: Unfiltered) | RST (Estado: Unfiltered) |
+| **UDP** | Silencio (o respuesta UDP) | ICMP Port Unreachable |
+
+**Dato clave para el examinador:** Los escaneos NULL, FIN y XMAS no funcionan contra sistemas **Windows** (responden RST siempre aunque el puerto esté abierto) porque Microsoft no sigue estrictamente el RFC 793. ¡Mencionar esto te dará puntos extra!
+
+### 1. SYN Scan (`--scan SYN`)
+
+Es el "Half-Open" scan. No completa el saludo de 3 vías (Three-way handshake).
+
+* **Abierto:** Recibes **SYN/ACK**. Tu programa debe enviar un **RST** inmediatamente para no dejar la conexión colgada.
+* **Cerrado:** Recibes **RST**.
+* **Filtrado:** No hay respuesta o recibes un error **ICMP** (tipo 3, códigos 1, 2, 3, 9, 10 o 13).
+
+### 2. NULL (`--scan NULL`) y FIN (`--scan FIN`)
+
+Se basan en una vulnerabilidad del estándar TCP (RFC 793): si el puerto está cerrado, debe responder RST. Si está abierto, ignora paquetes "inválidos".
+
+* **NULL:** El paquete no tiene ninguna flag activada.
+* **FIN:** Solo tiene la flag FIN activada.
+* **Abierto|Filtrado:** **Silencio total**. Como no hay respuesta, no puedes saber si el puerto está abierto o si un firewall tiró el paquete.
+* **Cerrado:** Recibes **RST/ACK**.
+
+### 3. XMAS Scan (`--scan XMAS`)
+
+Se llama así porque el paquete tiene las flags **FIN, PSH y URG** activadas (está "iluminado como un árbol de Navidad").
+
+* **Abierto|Filtrado:** **Silencio total**. (Igual que NULL/FIN).
+* **Cerrado:** Recibes **RST/ACK**.
+
+### 4. ACK Scan (`--scan ACK`)
+
+Este scan **no sirve para saber si un puerto está abierto**. Se usa para mapear reglas de firewalls.
+
+* **Unfiltered (No filtrado):** Recibes un **RST**. Esto significa que el paquete llegó al sistema operativo (el puerto puede estar abierto o cerrado, pero el firewall permite el paso).
+* **Filtered (Filtrado):** No hay respuesta o recibes un error **ICMP**. Significa que el firewall bloqueó el paquete ACK.
+
+### 5. UDP Scan (`--scan UDP`)
+
+Este es el más difícil porque UDP no tiene estado (no hay handshake).
+
+* **Abierto:** Es raro recibir respuesta. Si la hay, suele ser el protocolo específico (ej. una respuesta de DNS). Como tu `ft_nmap` suele enviar paquetes vacíos, lo normal es el **silencio**.
+* **Cerrado:** Recibes un error **ICMP Port Unreachable (Tipo 3, Código 3)**. Este es el único resultado seguro de que está cerrado.
+* **Abierto|Filtrado:** **Silencio total**. Al igual que en los escaneos sigilosos, si no vuelve nada, nmap asume que o está abierto o el firewall bloqueó el paquete UDP o el ICMP de vuelta.
+
+
+---
+
 ## 📚 Documentación adicional
 
 * `doc/defence.txt`
