@@ -158,7 +158,7 @@ valgrind --leak-check=full --show-leak-kinds=all ./ft_nmap [args]
 
 ---
 
-### Tabla de Resumen para tu Defensa
+### Tabla de Flags
 
 | Tipo de Scan | Respuesta si está ABIERTO | Respuesta si está CERRADO |
 | --- | --- | --- |
