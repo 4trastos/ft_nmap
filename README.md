@@ -167,7 +167,7 @@ valgrind --leak-check=full --show-leak-kinds=all ./ft_nmap [args]
 | **ACK** | RST (Estado: Unfiltered) | RST (Estado: Unfiltered) |
 | **UDP** | Silencio (o respuesta UDP) | ICMP Port Unreachable |
 
-**Dato clave para el examinador:** Los escaneos NULL, FIN y XMAS no funcionan contra sistemas **Windows** (responden RST siempre aunque el puerto esté abierto) porque Microsoft no sigue estrictamente el RFC 793. ¡Mencionar esto te dará puntos extra!
+**Dato clave:** Los escaneos NULL, FIN y XMAS no funcionan contra sistemas **Windows** (responden RST siempre aunque el puerto esté abierto) porque Microsoft no sigue estrictamente el RFC 793.
 
 ### 1. SYN Scan (`--scan SYN`)
 
